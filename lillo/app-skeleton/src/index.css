@@ -18,6 +18,12 @@
   --degraded: #bf5a4f;
   --accent: #5f8a4b;
   --accent-strong: #3f6e4e;
+  --profile-brand: #355e47;
+  --profile-muted: #5b6f61;
+  --profile-muted-strong: #415245;
+  --profile-card-radius: 26px;
+  --profile-border: rgba(54, 88, 66, 0.18);
+  --profile-shadow-soft: 0 15px 34px rgba(36, 56, 44, 0.1);
 }
 
 * {

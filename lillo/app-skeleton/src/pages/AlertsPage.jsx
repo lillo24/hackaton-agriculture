@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
-import { Link, useLocation, useSearchParams } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import AlertListItem from '../components/AlertListItem';
-import PageHeader from '../components/PageHeader';
 import SectionCard from '../components/SectionCard';
 import StatusBadge from '../components/StatusBadge';
 import { alertSeverityScale, alertStatusScale, farmRelevanceScale } from '../data/mockData';
@@ -94,7 +93,6 @@ function AlertsLoadingState() {
 }
 
 function AlertsPage({
-  selectedFarm,
   alerts,
   isLoading = false,
   selectedAlertId = null,
@@ -160,15 +158,11 @@ function AlertsPage({
     return nextGroups;
   }, [filteredAlerts]);
 
-  const leadAlert = filteredAlerts[0] ?? null;
   const hasActionNow = groupedAlerts.actionNow.length > 0;
   const returnTo = `${location.pathname}${location.search}`;
   const criticalCount = filteredAlerts.filter((alert) => alert.severity === 'critical').length;
   const activeCount = filteredAlerts.filter((alert) => alert.status === 'new' || alert.status === 'active').length;
   const monitoringCount = filteredAlerts.filter((alert) => alert.status === 'monitoring' || alert.status === 'acknowledged').length;
-  const resolvedCount = filteredAlerts.filter((alert) => alert.status === 'resolved').length;
-  const visibleSignalCount = new Set(filteredAlerts.flatMap((alert) => alert.sourceIds)).size;
-  const visibleFeedCount = new Set(filteredAlerts.flatMap((alert) => alert.relatedIntegrationIds)).size;
 
   function updateFilter(filterName, nextValue) {
     const nextSearch = new URLSearchParams(searchParams);
@@ -212,7 +206,6 @@ function AlertsPage({
               index={startIndex + index}
               isFocused={focusedAlertId === alert.id}
               key={alert.id}
-              priorityRank={startIndex + index + 1}
               returnTo={returnTo}
               onOpenAlert={handleOpenAlert}
             />
@@ -224,20 +217,12 @@ function AlertsPage({
 
   return (
     <div className="page">
-      <PageHeader
-        description={`Prioritized for ${selectedFarm.label.toLowerCase()} operations using severity, profile relevance, status urgency, and recency. Current watchpoint: ${selectedFarm.primarySignal.toLowerCase()}.`}
-        eyebrow="Alerts"
-        title={`${alerts.length} live alerts in ${selectedFarm.label} mode`}
-        trailing={(
-          <div className="badge-row">
-            <StatusBadge tone="critical">{criticalCount} critical</StatusBadge>
-            <StatusBadge tone="active">{activeCount} active</StatusBadge>
-            <StatusBadge tone="monitoring">{monitoringCount} monitoring</StatusBadge>
-          </div>
-        )}
-      />
-
-      <SectionCard subtitle="Use focused filters to control the operational conversation without losing flow." title="Operational filters">
+      <SectionCard title="Filters">
+        <div className="badge-row">
+          <StatusBadge tone="critical">{criticalCount} critical</StatusBadge>
+          <StatusBadge tone="active">{activeCount} active</StatusBadge>
+          <StatusBadge tone="monitoring">{monitoringCount} monitoring</StatusBadge>
+        </div>
         <div className="filter-grid filter-grid--alerts">
           <label className="filter-field" htmlFor="severity-filter">
             Severity
@@ -335,66 +320,6 @@ function AlertsPage({
             </button>
           ) : null}
         </SectionCard>
-      ) : null}
-
-      {!isLoading && leadAlert ? (
-        <div className="alerts-overview">
-          <SectionCard subtitle={leadAlert.title} title="Priority signal">
-            <div className="badge-row">
-              <StatusBadge tone={leadAlert.severity}>{leadAlert.severity}</StatusBadge>
-              <StatusBadge tone={leadAlert.status}>{leadAlert.status}</StatusBadge>
-              <StatusBadge tone="neutral">{leadAlert.farmRelevance} relevance</StatusBadge>
-              <StatusBadge tone="neutral">{leadAlert.confidenceLabel}</StatusBadge>
-              <StatusBadge tone="neutral">{leadAlert.sourceSignalCount} signals</StatusBadge>
-            </div>
-            <p className="detail-text detail-text--spaced">{leadAlert.summary}</p>
-            <p className="detail-text detail-text--compact">
-              {leadAlert.field.name}
-              {' '}
-              ({leadAlert.field.plotCode})
-              {' '}
-              -
-              {' '}
-              {leadAlert.timestampLabel}
-            </p>
-            <Link
-              className="inline-link inline-link--cta"
-              onClick={() => handleOpenAlert(leadAlert.id)}
-              state={{ from: returnTo, focusAlertId: leadAlert.id }}
-              to="/alert"
-            >
-              Open priority detail
-            </Link>
-          </SectionCard>
-          <SectionCard subtitle="Current feed balance after ranking and filters." title="Operational summary">
-            <div className="summary-strip">
-              <article className="summary-chip summary-chip--critical">
-                <strong>{criticalCount}</strong>
-                <span>critical</span>
-              </article>
-              <article className="summary-chip summary-chip--active">
-                <strong>{activeCount}</strong>
-                <span>active</span>
-              </article>
-              <article className="summary-chip summary-chip--monitoring">
-                <strong>{monitoringCount}</strong>
-                <span>monitoring</span>
-              </article>
-              <article className="summary-chip summary-chip--resolved">
-                <strong>{resolvedCount}</strong>
-                <span>resolved</span>
-              </article>
-              <article className="summary-chip">
-                <strong>{visibleSignalCount}</strong>
-                <span>signals in view</span>
-              </article>
-              <article className="summary-chip">
-                <strong>{visibleFeedCount}</strong>
-                <span>feeds in view</span>
-              </article>
-            </div>
-          </SectionCard>
-        </div>
       ) : null}
 
       {!isLoading && filteredAlerts.length > 0 && !hasActionNow ? (

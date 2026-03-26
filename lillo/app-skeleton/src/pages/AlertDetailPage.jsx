@@ -1,29 +1,12 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import PageHeader from '../components/PageHeader';
 import SectionCard from '../components/SectionCard';
-import StatusBadge from '../components/StatusBadge';
 
-function compactCopy(text, maxLength = 96) {
-  const normalized = text.replace(/\s+/g, ' ').trim();
-
-  if (normalized.length <= maxLength) {
-    return normalized;
-  }
-
-  const firstSentence = normalized.split('. ')[0];
-
-  if (firstSentence.length <= maxLength) {
-    return firstSentence.endsWith('.') ? firstSentence : `${firstSentence}.`;
-  }
-
-  return `${normalized.slice(0, maxLength - 3).trimEnd()}...`;
+function formatUrgency(value) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
-function AlertDetailPage({ selectedFarm, alert }) {
-  const location = useLocation();
-  const backTarget = location.state?.from ?? '/alerts';
-  const backState = alert?.id ? { focusAlertId: alert.id } : undefined;
-
+function AlertDetailPage({ alert }) {
   if (!alert) {
     return (
       <div className="page">
@@ -33,7 +16,7 @@ function AlertDetailPage({ selectedFarm, alert }) {
           description="Open an alert from the Alerts page to inspect source signals and recommended action."
         />
         <SectionCard subtitle="This page is reserved for one selected alert detail view." title="Quiet placeholder">
-          <Link className="inline-link" state={backState} to="/alerts">
+          <Link className="inline-link" to="/alerts">
             Open alerts list
           </Link>
         </SectionCard>
@@ -41,100 +24,82 @@ function AlertDetailPage({ selectedFarm, alert }) {
     );
   }
 
-  const sourceCount = alert.sources.length;
-  const sourceCountForLayout = Math.max(sourceCount, 1);
+  const isNewNotification = alert.status === 'new';
 
   return (
     <div className="page alert-detail-page">
-      <Link className="inline-link alert-detail-page__back" state={backState} to={backTarget}>
-        Back to alerts
-      </Link>
+      <SectionCard title={alert.title}>
+        <div className="alert-detail-priority-row">
+          <p className="alert-detail-priority">
+            <strong>Urgency</strong>
+            {' '}
+            {formatUrgency(alert.severity)}
+          </p>
+          {isNewNotification ? (
+            <p className="alert-detail-notification">
+              <span aria-hidden="true" className="alert-detail-notification__dot" />
+              <span>New notification</span>
+            </p>
+          ) : null}
+        </div>
 
-      <PageHeader
-        description={alert.summary}
-        eyebrow="Alert Detail"
-        title={alert.title}
-        trailing={(
-          <div className="badge-row">
-            <StatusBadge tone={alert.severity}>{alert.severity}</StatusBadge>
-            <StatusBadge tone={alert.status}>{alert.status}</StatusBadge>
-            <StatusBadge tone="neutral">{alert.confidenceLabel}</StatusBadge>
-            <StatusBadge tone="neutral">{alert.sourceSignalCount} signals</StatusBadge>
-          </div>
-        )}
-      />
-
-      <div className="alert-detail-meta">
-        <p>
-          <strong>Field</strong>
-          {' '}
-          {alert.field.name}
-          {' '}
-          ({alert.field.plotCode})
-        </p>
-        <p>
-          <strong>Triggered</strong>
-          {' '}
-          {alert.timestampLabel}
-        </p>
-        <p>
-          <strong>Farm profile</strong>
-          {' '}
-          {selectedFarm.label}
-        </p>
-      </div>
-
-      <SectionCard subtitle="These are the main source signals used for the current alert." title="Source data blocks">
-        <div className="source-flow" style={{ '--source-count': sourceCountForLayout }}>
-          <div className="source-flow__grid">
-            {alert.sources.map((source, index) => (
-              <article className="source-flow-card" key={source.id} style={{ '--delay': `${index * 50}ms` }}>
-                <p className="source-flow-card__name">{source.label}</p>
-                <p className="source-flow-card__metric">{compactCopy(source.signal, 112)}</p>
-                <p className="source-flow-card__note">{compactCopy(source.interpretation, 94)}</p>
-              </article>
-            ))}
-          </div>
-          <div aria-hidden="true" className="source-flow__merge">
-            <div className="source-flow__merge-lines">
-              {alert.sources.map((source) => (
-                <span key={`${source.id}-connector`} />
-              ))}
-            </div>
-            <span className="source-flow__merge-label">Signals merged</span>
-          </div>
+        <div className="alert-detail-meta">
+          <p>
+            <strong>Triggered</strong>
+            {' '}
+            {alert.timestampLabel}
+          </p>
+          <p>
+            <strong>Field</strong>
+            {' '}
+            {alert.field.name}
+            {' '}
+            ({alert.field.plotCode})
+          </p>
         </div>
       </SectionCard>
 
-      <div aria-hidden="true" className="detail-flow-arrow">
-        <span />
+      <div className="alert-roadmap" role="group" aria-label="Alert roadmap">
+        <section className="roadmap-step roadmap-step--problems" style={{ '--step-delay': '0ms' }}>
+          <header className="roadmap-step__header">
+            <h3>Problems</h3>
+            <p>Signals emerging from field sensors and connected feeds.</p>
+          </header>
+          <ul className="roadmap-problem-list">
+            {alert.sources.map((source) => (
+              <li className="roadmap-problem" key={source.id}>
+                <p className="roadmap-problem__source">{source.label}</p>
+                <p className="roadmap-problem__signal">{source.signal}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <div aria-hidden="true" className="roadmap-link">
+          <span>Integrated</span>
+        </div>
+
+        <section className="roadmap-step roadmap-step--integrated" style={{ '--step-delay': '140ms' }}>
+          <header className="roadmap-step__header">
+            <h3>Integrated</h3>
+            <p>Merged interpretation from the active alert signals.</p>
+          </header>
+          <p className="detail-text">{alert.whyTriggered}</p>
+          <p className="detail-text detail-text--compact">{alert.relevanceReason}</p>
+        </section>
+
+        <div aria-hidden="true" className="roadmap-link roadmap-link--action">
+          <span>Action to do</span>
+        </div>
+
+        <section className="roadmap-step roadmap-step--action" style={{ '--step-delay': '280ms' }}>
+          <header className="roadmap-step__header">
+            <h3>Action to do</h3>
+            <p>Next field operation to run now.</p>
+          </header>
+          <p className="detail-text">{alert.suggestedAction}</p>
+        </section>
       </div>
-
-      <SectionCard
-        subtitle={`Multiple signals -> one interpreted problem (${sourceCount} signal${sourceCount === 1 ? '' : 's'}).`}
-        title="Integrated explanation"
-      >
-        <p className="detail-text">{alert.whyTriggered}</p>
-        <p className="detail-text detail-text--compact">{alert.relevanceReason}</p>
-      </SectionCard>
-
-      <div aria-hidden="true" className="detail-flow-arrow detail-flow-arrow--action">
-        <span />
-      </div>
-
-      <SectionCard subtitle="Concrete next step for the farmer and operator." title="Recommended action">
-        <p className="detail-text">{alert.suggestedAction}</p>
-        <p className="detail-text detail-text--compact">
-          Prioritize
-          {' '}
-          {alert.field.name}
-          {' '}
-          checks in the next field round.
-        </p>
-        <Link className="inline-link" state={backState} to={backTarget}>
-          Return to alerts list
-        </Link>
-      </SectionCard>
     </div>
   );
 }

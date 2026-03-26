@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import PhoneFrame from '../components/PhoneFrame';
+import RoadmapPresentation from './RoadmapPresentation';
 import './AppShell.css';
 
 const navItems = [
@@ -13,6 +14,7 @@ const navItems = [
 const previewModes = [
   { id: 'phone', label: 'Phone' },
   { id: 'desktop', label: 'Desktop' },
+  { id: 'roadmap', label: 'Roadmap' },
 ];
 
 function NavIcon({ icon }) {
@@ -54,20 +56,9 @@ function NavIcon({ icon }) {
   );
 }
 
-function PreviewApp({ alerts, previewMode, selectedFarm }) {
+function PreviewApp({ previewMode }) {
   return (
     <div className={`mobile-app mobile-app--${previewMode}`}>
-      <header className="mobile-app__topbar">
-        <div>
-          <p className="mobile-app__brand">AgriSentinel</p>
-          <p className="mobile-app__context">{selectedFarm.label} context</p>
-        </div>
-        <div className="mobile-app__status-ring">
-          <strong>{alerts.length}</strong>
-          <span>alerts</span>
-        </div>
-      </header>
-
       <main className="mobile-app__content">
         <Outlet />
       </main>
@@ -91,12 +82,17 @@ function PreviewApp({ alerts, previewMode, selectedFarm }) {
 
 function AppShell({ selectedFarm, alerts }) {
   const [previewMode, setPreviewMode] = useState('phone');
-  const previewApp = <PreviewApp alerts={alerts} previewMode={previewMode} selectedFarm={selectedFarm} />;
+  const previewApp = <PreviewApp previewMode={previewMode} />;
+  const isRoadmap = previewMode === 'roadmap';
 
   return (
     <div className={`app-shell app-shell--${previewMode}`}>
-      <div className="app-shell__top-toggle">
-        <div aria-label="Preview mode selector" className="app-shell__mode-toggle" role="tablist">
+      <div className={`app-shell__top-toggle${isRoadmap ? ' app-shell__top-toggle--roadmap' : ''}`}>
+        <div
+          aria-label="Preview mode selector"
+          className={`app-shell__mode-toggle${isRoadmap ? ' app-shell__mode-toggle--roadmap' : ''}`}
+          role="tablist"
+        >
           {previewModes.map((mode) => {
             const isActive = previewMode === mode.id;
 
@@ -117,7 +113,9 @@ function AppShell({ selectedFarm, alerts }) {
       </div>
 
       <section className={`app-shell__preview-stage app-shell__preview-stage--${previewMode}`}>
-        {previewMode === 'phone' ? (
+        {isRoadmap ? (
+          <RoadmapPresentation alertsCount={alerts.length} selectedFarm={selectedFarm} />
+        ) : previewMode === 'phone' ? (
           <PhoneFrame>{previewApp}</PhoneFrame>
         ) : (
           <div className="desktop-preview-frame">{previewApp}</div>
