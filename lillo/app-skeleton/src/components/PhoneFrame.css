@@ -1,0 +1,50 @@
+.phone-body {
+  position: relative;
+  width: 375px;
+  height: 812px;
+  border-radius: 50px;
+  background: #1a1a1a;
+  box-shadow: 0 0 0 2px #333 inset;
+  padding: 12px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.phone-bezel {
+  width: 100%;
+  height: 100%;
+  background-color: #000;
+  border-radius: 40px;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.phone-screen {
+  flex: 1;
+  margin: 45px 0;
+  border-radius: 2px;
+  background-color: #ffffff;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: #333;
+}
+
+.phone-content {
+  flex: 1;
+  overflow: hidden;
+  padding-top: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 460px) {
+  .phone-body {
+    width: calc(100vw - 2.5rem);
+    height: calc((100vw - 2.5rem) * 812 / 375);
+  }
+}
