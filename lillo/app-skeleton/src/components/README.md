@@ -13,9 +13,10 @@ Files
 - `SectionCard.jsx` - shared card wrapper for grouped page content.
 - `StatusBadge.jsx` - tone-aware pill for severities, statuses, and metadata tags.
 - `AlertListItem.jsx` - reusable prioritized alert card with compact severity/time metadata, larger right-side signal/problem icons, and card-level open behavior that preserves list return context and focus id.
+- `FarmProfileStage.jsx` (`DRAFT`) - shared farm-profile stage that can render the handwritten-style `Giorgio's farm` header plus the static parcel scene, profile integration badges, and an optional dashboard-only floating alert summary, so Dashboard and Profile routes keep the same top block.
 - `WaterLevelCard.jsx` (`DRAFT`) - reusable calm trend card with a smooth SVG line and day-axis labels for dashboard summary context.
 - `SoilMoistureCard.jsx` (`DRAFT`) - reusable three-pillar moisture card with full-capacity wells and filled level bars for compact dashboard overview.
-- `FarmVisualCard.jsx` (`DRAFT`) - reusable static mini-farm scene card with flatter pseudo-isometric parcels and optional context pills/legend.
+- `FarmVisualCard.jsx` (`DRAFT`) - reusable static mini-farm scene card with flatter pseudo-isometric parcels, an optional floating alert-summary stack, and optional context pills/legend.
 - `components.css` - shared styling rules for the reusable components above.
 
 Why these live together
@@ -29,8 +30,9 @@ Non-obvious behavior
 - `PhoneFrame` keeps the real routed app mounted underneath the intro overlay so the unlock animation can slide the fake lock screen away instead of remounting the app.
 - When the startup intro is enabled, `PhoneFrame` stays visually asleep while the shell-level intro runs, and only transitions from `off` to `vibrating` after the terminal overlay explicitly hands off control.
 - `PhoneFrame` only reports intro completion after the state machine reaches its final `app` state, which keeps replay/skip handling deterministic in the preview shell.
+- `FarmProfileStage` centralizes the optional profile header, alert-derived field markers, integration-derived source badges, and the optional dashboard-only alert summary so the dashboard and profile routes still share one farm-scene owner.
 - `SectionCard` accepts an optional `className` so pages can keep shared card semantics while overriding container tone for special layouts.
 - `WaterLevelCard` rescales chart Y positions from provided values so the curve remains readable without introducing dashboard-like chart complexity.
 - `SoilMoistureCard` expects percentage-like values and clamps to `0-100` before rendering bar fills.
-- `FarmVisualCard` can render an optional floating signal badge row and fixed tile-status markers (2 verified, 2 warning) with slow up/down animation for pitch readability, and can hide the legend for cleaner profile composition.
+- `FarmVisualCard` can render an optional floating signal badge row, an optional bottom-left alert-summary stack, and fixed tile-status markers (2 verified, 2 warning) with slow up/down animation for pitch readability, and can hide the legend for cleaner profile composition.
 - `AlertListItem` picks one source icon from available alert source ids (satellite first when present) and one problem icon from known alert ids, with keyword fallback for unknown templates while keeping the full card as the open-detail affordance; when rendered as historical, it switches to a muted non-link card.

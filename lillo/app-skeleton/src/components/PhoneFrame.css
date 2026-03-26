@@ -383,23 +383,23 @@
   }
 
   14% {
-    transform: translateX(-4px) rotate(-0.55deg);
+    transform: translateX(-5px) rotate(-0.72deg);
   }
 
   28% {
-    transform: translateX(4px) rotate(0.55deg);
+    transform: translateX(5px) rotate(0.72deg);
   }
 
   42% {
-    transform: translateX(-3px) rotate(-0.4deg);
+    transform: translateX(-4px) rotate(-0.52deg);
   }
 
   56% {
-    transform: translateX(3px) rotate(0.35deg);
+    transform: translateX(4px) rotate(0.46deg);
   }
 
   72% {
-    transform: translateX(-1px) rotate(-0.14deg);
+    transform: translateX(-1.6px) rotate(-0.2deg);
   }
 
   100% {

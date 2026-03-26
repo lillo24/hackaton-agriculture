@@ -13,13 +13,29 @@
 
 .dashboard-priority-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.55fr) minmax(210px, 0.9fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.85rem;
   align-items: stretch;
+  width: min(100%, 980px);
+  align-self: center;
 }
 
 .dashboard-priority-grid .section-card {
   height: 100%;
+}
+
+.dashboard-profile-stage {
+  margin-bottom: 0.05rem;
+}
+
+.dashboard-page .section-card.farm-profile-stage__card,
+.profile-page .section-card.farm-profile-stage__card {
+  width: min(100%, 980px);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .mobile-app--phone .dashboard-priority-grid {
@@ -31,17 +47,13 @@
   margin-inline: -1rem;
 }
 
+.mobile-app--phone .dashboard-profile-stage {
+  margin-inline: 1rem;
+}
+
 .mobile-app--phone .dashboard-priority-grid .section-card {
   height: auto;
   border-radius: 0;
-}
-
-.mobile-app--phone .dashboard-priority-grid__alerts {
-  order: 1;
-}
-
-.mobile-app--phone .dashboard-priority-grid__assistant {
-  order: 2;
 }
 
 .mobile-app--phone .dashboard-summary-grid {
@@ -56,62 +68,6 @@
 
 .mobile-app--phone .dashboard-summary-grid .section-card__subtitle {
   display: none;
-}
-
-.dashboard-alert-focus {
-  display: grid;
-  gap: 0.55rem;
-}
-
-.dashboard-alert-focus__total {
-  display: block;
-  font-size: clamp(1.55rem, 3.8vw, 2.05rem);
-  line-height: 0.95;
-  color: var(--profile-brand);
-}
-
-.dashboard-severity-row {
-  margin-top: 0.1rem;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.42rem;
-}
-
-.dashboard-severity-pill {
-  margin: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.2rem 0.44rem;
-  border-radius: 8px;
-  border: 1px solid rgba(63, 110, 78, 0.2);
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-}
-
-.dashboard-severity-pill--critical {
-  color: #7b261e;
-  background: rgba(217, 80, 67, 0.2);
-  border-color: rgba(217, 80, 67, 0.35);
-}
-
-.dashboard-severity-pill--medium {
-  color: #5a4508;
-  background: rgba(202, 160, 42, 0.2);
-}
-
-.dashboard-severity-pill--low {
-  color: #1f5a42;
-  background: rgba(61, 143, 109, 0.18);
-  border-color: rgba(61, 143, 109, 0.34);
-}
-
-.dashboard-severity-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 999px;
-  background: currentColor;
 }
 
 .dashboard-summary-grid {
@@ -301,6 +257,62 @@
   stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+.mobile-app--desktop .dashboard-assistant-chat {
+  min-height: 300px;
+}
+
+.mobile-app--desktop .dashboard-assistant-chat__header {
+  padding: 0.8rem 0.92rem;
+  gap: 0.64rem;
+}
+
+.mobile-app--desktop .dashboard-assistant-chat__avatar {
+  width: 36px;
+  height: 36px;
+}
+
+.mobile-app--desktop .dashboard-assistant-chat__avatar svg {
+  width: 20px;
+  height: 20px;
+}
+
+.mobile-app--desktop .dashboard-assistant-chat__name {
+  font-size: 0.82rem;
+}
+
+.mobile-app--desktop .dashboard-assistant-chat__status {
+  font-size: 0.66rem;
+}
+
+.mobile-app--desktop .dashboard-assistant-chat__messages {
+  gap: 0.7rem;
+  padding: 0.9rem 0.92rem;
+}
+
+.mobile-app--desktop .dashboard-assistant-chat__bubble {
+  max-width: 75%;
+  font-size: 0.84rem;
+}
+
+.mobile-app--desktop .dashboard-assistant-chat__composer {
+  padding: 0.74rem 0.92rem 0.82rem;
+}
+
+.mobile-app--desktop .dashboard-assistant-chat__composer input {
+  padding: 0.62rem 0.72rem;
+  font-size: 0.82rem;
+}
+
+.mobile-app--desktop .dashboard-assistant-chat__composer button {
+  width: 38px;
+  height: 38px;
+}
+
+.mobile-app--desktop .dashboard-assistant-chat__composer button svg {
+  width: 16px;
+  height: 16px;
 }
 
 .mobile-app--phone .dashboard-assistant-chat {

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import FarmProfileStage from '../components/FarmProfileStage';
 import SectionCard from '../components/SectionCard';
 import SoilMoistureCard from '../components/SoilMoistureCard';
 import WaterLevelCard from '../components/WaterLevelCard';
@@ -42,7 +43,7 @@ function buildFollowupAssistantReply({
   return `Received. ${farmLabel} currently has ${totalAlerts} alerts (${severityCounts.critical} critical, ${severityCounts.medium} medium, ${severityCounts.low} low). ${withPeriod(prompt)}`;
 }
 
-function DashboardPage({ selectedFarm, alerts = [] }) {
+function DashboardPage({ selectedFarm, alerts = [], integrations = [] }) {
   const [chatInput, setChatInput] = useState('');
   const [chatMessages, setChatMessages] = useState([]);
   const [typingMessageId, setTypingMessageId] = useState(null);
@@ -73,33 +74,23 @@ function DashboardPage({ selectedFarm, alerts = [] }) {
     [alerts],
   );
   const totalAlerts = alerts.length;
-  const alertCountCopy = useMemo(
-    () => `${totalAlerts} ${totalAlerts === 1 ? 'Alert' : 'Alerts'}`,
-    [totalAlerts],
-  );
   const severityPills = useMemo(
     () =>
       [
         {
           key: 'critical',
-          className: 'dashboard-severity-pill--critical',
+          tone: 'critical',
           count: severityCounts.critical,
           label: `${severityCounts.critical} critical${severityCounts.critical === 1 ? '' : 's'}`,
         },
         {
           key: 'medium',
-          className: 'dashboard-severity-pill--medium',
+          tone: 'medium',
           count: severityCounts.medium,
           label: `${severityCounts.medium} medium`,
         },
-        {
-          key: 'low',
-          className: 'dashboard-severity-pill--low',
-          count: severityCounts.low,
-          label: `${severityCounts.low} low`,
-        },
       ].filter((pill) => pill.count > 0),
-    [severityCounts.critical, severityCounts.low, severityCounts.medium],
+    [severityCounts.critical, severityCounts.medium],
   );
   const waterTrend = useMemo(() => {
     const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -198,6 +189,15 @@ function DashboardPage({ selectedFarm, alerts = [] }) {
 
   return (
     <div className="page dashboard-page">
+      <FarmProfileStage
+        alertSummaryItems={severityPills}
+        alerts={alerts}
+        className="dashboard-profile-stage"
+        integrations={integrations}
+        selectedFarm={selectedFarm}
+        title="Giorgio's farm"
+      />
+
       <div className="dashboard-priority-grid">
         <div className="dashboard-priority-grid__assistant">
           <SectionCard>
@@ -246,22 +246,6 @@ function DashboardPage({ selectedFarm, alerts = [] }) {
                     </svg>
                   </button>
                 </form>
-              </div>
-            </div>
-          </SectionCard>
-        </div>
-
-        <div className="dashboard-priority-grid__alerts">
-          <SectionCard>
-            <div className="dashboard-alert-focus">
-              <strong className="dashboard-alert-focus__total">{alertCountCopy}</strong>
-              <div className="dashboard-severity-row">
-                {severityPills.map((pill) => (
-                  <p className={`dashboard-severity-pill ${pill.className}`} key={pill.key}>
-                    <span className="dashboard-severity-dot" />
-                    {pill.label}
-                  </p>
-                ))}
               </div>
             </div>
           </SectionCard>

@@ -371,6 +371,57 @@
   box-shadow: 0 0 0 2px rgba(191, 90, 79, 0.18);
 }
 
+.farm-visual-card__summary {
+  position: absolute;
+  left: 0.3rem;
+  bottom: 0.22rem;
+  z-index: 3;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.32rem;
+  pointer-events: none;
+}
+
+.farm-visual-card__summary-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: fit-content;
+  max-width: 100%;
+  padding: 0.3rem 0.48rem;
+  border-radius: 11px;
+  border: 1px solid rgba(63, 110, 78, 0.16);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 6px 12px rgba(45, 70, 55, 0.1);
+  color: var(--ink);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.farm-visual-card__summary-pill--critical {
+  color: #7b261e;
+  border-color: rgba(217, 80, 67, 0.32);
+  background: rgba(255, 243, 241, 0.94);
+}
+
+.farm-visual-card__summary-pill--medium {
+  color: #5a4508;
+  border-color: rgba(202, 160, 42, 0.3);
+  background: rgba(255, 249, 231, 0.94);
+}
+
+.farm-visual-card__summary-dot {
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: currentColor;
+}
+
 .farm-visual-card__scene {
   width: 100%;
   height: auto;
@@ -525,6 +576,58 @@
   height: 10px;
   border-radius: 999px;
   box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.72);
+}
+
+.farm-profile-stage {
+  display: grid;
+  gap: 1rem;
+  justify-items: center;
+}
+
+.farm-profile-stage .page-header {
+  align-items: center;
+  justify-content: center;
+}
+
+.farm-profile-stage .page-header > div {
+  text-align: center;
+}
+
+.farm-profile-stage .page-header__title {
+  font-family: "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive;
+  font-size: 1.76rem;
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+}
+
+.farm-profile-stage .page-header__description {
+  max-width: 56ch;
+  color: var(--profile-muted);
+}
+
+.farm-profile-stage .section-card.farm-profile-stage__card {
+  width: min(100%, 980px);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.farm-profile-stage__card .farm-visual-card {
+  height: 100%;
+}
+
+.farm-profile-stage__card .farm-visual-card__stage {
+  padding: 0.5rem 0.06rem 0.48rem;
+}
+
+.farm-profile-stage__card .farm-visual-card__scene {
+  width: 100%;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  box-shadow: none;
 }
 
 .alert-list-item {
@@ -866,6 +969,12 @@
   font-size: 0.66rem;
 }
 
+.mobile-app--desktop .farm-visual-card__summary-pill {
+  padding: 0.34rem 0.56rem;
+  border-radius: 12px;
+  font-size: 0.74rem;
+}
+
 @media (max-width: 640px) {
   .page-header {
     flex-direction: column;
@@ -917,6 +1026,19 @@
     pointer-events: auto;
   }
 
+  .farm-visual-card__summary {
+    position: static;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.28rem;
+    margin: 0 0 0.4rem;
+    pointer-events: auto;
+  }
+
+  .farm-visual-card__summary-pill {
+    white-space: normal;
+  }
+
   .farm-visual-card__scene {
     width: 107%;
     margin-left: -3.5%;
@@ -963,5 +1085,11 @@
 
   .farm-visual-card__pill span {
     font-size: 0.6rem;
+  }
+}
+
+@media (max-width: 700px) {
+  .farm-profile-stage .page-header {
+    align-items: flex-start;
   }
 }

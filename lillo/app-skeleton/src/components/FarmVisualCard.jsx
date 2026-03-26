@@ -13,6 +13,7 @@ function FarmVisualCard({
   farmName = 'Farm context',
   markers = defaultMarkers,
   contextPills = [],
+  floatingSummaryItems = [],
   signalBadges = [],
   showLegend = true,
   subtitle = 'Stylized parcel view for orientation only.',
@@ -39,6 +40,17 @@ function FarmVisualCard({
                     <strong>{signal.label}</strong>
                     <small>{signal.statusLabel ?? (signal.connected ? 'Active' : 'Inactive')}</small>
                   </span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+
+          {floatingSummaryItems.length ? (
+            <ul aria-label="Alert summary" className="farm-visual-card__summary">
+              {floatingSummaryItems.map((item) => (
+                <li className={`farm-visual-card__summary-pill farm-visual-card__summary-pill--${item.tone}`} key={item.key}>
+                  <span aria-hidden="true" className="farm-visual-card__summary-dot" />
+                  {item.label}
                 </li>
               ))}
             </ul>

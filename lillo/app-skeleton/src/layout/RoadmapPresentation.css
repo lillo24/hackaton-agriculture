@@ -813,17 +813,17 @@
   animation: roadmap-path-retract 0.38s cubic-bezier(0.2, 0.8, 0.3, 1) 0.72s both;
 }
 
-.roadmap-presentation--costs .roadmap-node--farmer {
+.roadmap-presentation--costs .roadmap-farmers.is-visible .roadmap-node--farmer {
   animation: roadmap-farmer-node-collapse 0.42s cubic-bezier(0.18, 0.82, 0.3, 1) calc(var(--collapse-delay, 0.42s) + 0.16s) both;
 }
 
-.roadmap-presentation--costs .roadmap-node--farmer .roadmap-node__farmer-core {
+.roadmap-presentation--costs .roadmap-farmers.is-visible .roadmap-node--farmer .roadmap-node__farmer-core {
   /* Collapse the internal farmer mark with the node shell so the reversal reads as complete. */
   animation: roadmap-farmer-core-collapse 0.38s cubic-bezier(0.18, 0.82, 0.3, 1) calc(var(--collapse-delay, 0.42s) + 0.18s) both;
 }
 
-.roadmap-presentation--costs .roadmap-node--farmer::before,
-.roadmap-presentation--costs .roadmap-node--farmer::after {
+.roadmap-presentation--costs .roadmap-farmers.is-visible .roadmap-node--farmer::before,
+.roadmap-presentation--costs .roadmap-farmers.is-visible .roadmap-node--farmer::after {
   animation: roadmap-farmer-accent-collapse 0.26s ease calc(var(--collapse-delay, 0.42s) + 0.16s) both;
 }
 
