@@ -120,6 +120,21 @@
   gap: 0.85rem;
 }
 
+.dashboard-page .dashboard-summary-grid .section-card__title,
+.dashboard-page .dashboard-summary-grid .section-card__subtitle {
+  margin-left: -0.14rem;
+}
+
+.dashboard-page .dashboard-summary-grid .water-level-card__summary {
+  margin-left: -0.14rem;
+}
+
+.dashboard-page .dashboard-summary-grid .soil-pillar__label,
+.dashboard-page .dashboard-summary-grid .soil-pillar__value {
+  justify-self: start;
+  text-align: left;
+}
+
 .dashboard-page .water-level-card__chart,
 .dashboard-page .soil-pillar__well {
   border: 0;
@@ -667,28 +682,6 @@
   color: #ffffff;
   border-color: rgba(63, 110, 78, 0.38);
   background: linear-gradient(145deg, rgba(63, 110, 78, 0.95), rgba(95, 138, 75, 0.95));
-}
-
-.filter-footer {
-  margin-top: 0.65rem;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 0.8rem;
-}
-
-.inline-action {
-  border: 0;
-  background: transparent;
-  color: var(--accent-strong);
-  font-weight: 700;
-  cursor: pointer;
-  padding: 0;
-  transition: opacity 0.2s ease;
-}
-
-.inline-action:hover {
-  opacity: 0.78;
 }
 
 .skeleton-card {
@@ -1430,11 +1423,6 @@
   }
 
   .farm-flow-cta {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .filter-footer {
     flex-direction: column;
     align-items: flex-start;
   }

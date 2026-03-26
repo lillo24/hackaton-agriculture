@@ -3,10 +3,10 @@ import SectionCard from './SectionCard';
 const markerPalette = ['#3f6e4e', '#77985f', '#5c7f64'];
 const defaultMarkers = ['North canopy', 'Lower terrace', 'Irrigation hub'];
 const tileStatuses = [
-  { id: 'tile-1', type: 'verified', x: 160, y: 54 },
-  { id: 'tile-2', type: 'warning', x: 215, y: 82 },
-  { id: 'tile-3', type: 'verified', x: 160, y: 110 },
-  { id: 'tile-4', type: 'warning', x: 105, y: 82 },
+  { id: 'tile-1', type: 'verified', x: 160, y: 61 },
+  { id: 'tile-2', type: 'warning', x: 215, y: 89 },
+  { id: 'tile-3', type: 'verified', x: 160, y: 117 },
+  { id: 'tile-4', type: 'warning', x: 105, y: 89 },
 ];
 
 function FarmVisualCard({
@@ -92,15 +92,15 @@ function FarmVisualCard({
                   className={`farm-visual-card__tile-status farm-visual-card__tile-status--${status.type} farm-visual-card__tile-status--float-${index + 1}`}
                   key={status.id}
                 >
-                  <circle className="farm-visual-card__tile-status-core" cx={status.x} cy={status.y} r="8.8" />
+                  <circle className="farm-visual-card__tile-status-core" cx={status.x} cy={status.y} r="9.6" />
                   {status.type === 'verified' ? (
                     <path d={`M ${status.x - 3.8} ${status.y + 0.1} L ${status.x - 1} ${status.y + 3.1} L ${status.x + 4.2} ${status.y - 2.4}`} />
                   ) : (
-                    <>
-                      <path d={`M ${status.x} ${status.y - 5.5} L ${status.x + 5.2} ${status.y + 4.3} H ${status.x - 5.2} Z`} />
-                      <path d={`M ${status.x} ${status.y - 1.9} V ${status.y + 1.4}`} />
-                      <circle className="farm-visual-card__tile-status-dot" cx={status.x} cy={status.y + 3.4} r="0.75" />
-                    </>
+                    <g className="farm-visual-card__tile-status-warning-glyph">
+                      <path className="farm-visual-card__tile-status-warning-mark" d={`M ${status.x - 5} ${status.y + 4.7} H ${status.x + 5} L ${status.x} ${status.y - 4.9} Z`} />
+                      <rect className="farm-visual-card__tile-status-warning-bar" height="4.2" rx="0.72" width="1.44" x={status.x - 0.72} y={status.y - 2.15} />
+                      <circle className="farm-visual-card__tile-status-warning-dot" cx={status.x} cy={status.y + 2.85} r="0.72" />
+                    </g>
                   )}
                 </g>
               ))}

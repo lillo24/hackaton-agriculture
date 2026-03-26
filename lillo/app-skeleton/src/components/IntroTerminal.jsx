@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import SourceIcon from './SourceIcon';
 import './IntroTerminal.css';
 
 const TERMINAL_LINES = [
@@ -17,10 +18,37 @@ const TERMINAL_LINES = [
   { id: 'export-handoff', tag: 'export', text: 'pitch handoff locked', delay: 360 },
 ];
 
+const SOURCE_FEEDS = [
+  { id: 'sensor', label: 'Sensors', type: 'sensor' },
+  { id: 'weather', label: 'Weather', type: 'weather' },
+  { id: 'satellite', label: 'Satellite', type: 'satellite' },
+];
+
+const SOURCE_SETTLE_MS = 460;
+const FEEDING_MS = 880;
 const COMPLETE_PAUSE_MS = 320;
-const COLLAPSE_DURATION_MS = 480;
+const BUBBLE_SETTLE_MS = 760;
+const CONNECT_TO_PHONE_MS = 860;
+const COLLAPSE_DURATION_MS = 920;
+const TERMINAL_GAP_CENTERING_FACTOR = 0.75;
+
+function buildPhoneConnectorPath({ bubbleX, bubbleY, phoneX, phoneY }) {
+  const horizontalSpan = Math.max(phoneX - bubbleX, 48);
+  const controlOneX = bubbleX + Math.max(34, horizontalSpan * 0.24);
+  const controlTwoX = bubbleX + Math.max(82, horizontalSpan * 0.72);
+
+  return `M ${bubbleX} ${bubbleY} C ${controlOneX} ${bubbleY}, ${controlTwoX} ${phoneY}, ${phoneX} ${phoneY}`;
+}
 
 function getStatusCopy(phase) {
+  if (phase === 'sources') {
+    return 'Sources';
+  }
+
+  if (phase === 'feeding') {
+    return 'Feeding';
+  }
+
   if (phase === 'running') {
     return 'Running';
   }
@@ -33,10 +61,26 @@ function getStatusCopy(phase) {
     return 'Node';
   }
 
+  if (phase === 'connectingToPhone') {
+    return 'Sending';
+  }
+
+  if (phase === 'handoffToPhone') {
+    return 'Delivered';
+  }
+
   return 'Idle';
 }
 
 function getFooterCopy(phase) {
+  if (phase === 'sources') {
+    return 'Locking the three upstream sources into the intake strip';
+  }
+
+  if (phase === 'feeding') {
+    return 'Sensor, meteo, and satellite signals are flowing into the processor';
+  }
+
   if (phase === 'running') {
     return 'Streaming deterministic demo telemetry';
   }
@@ -49,20 +93,94 @@ function getFooterCopy(phase) {
     return 'Decision core stable. Branch lines hook in here next.';
   }
 
+  if (phase === 'connectingToPhone') {
+    return 'Sending the processed alert payload into the phone trigger point';
+  }
+
+  if (phase === 'handoffToPhone') {
+    return 'Phone trigger reached. Startup sequence is now in the phone layer.';
+  }
+
   return 'Click the stage or press Space to run the simulation';
 }
 
-function IntroTerminal({ phase = 'hidden', onPhaseComplete }) {
+function IntroTerminal({ layout = null, phase = 'hidden', onPhoneTrigger, onPhaseComplete }) {
   const [visibleLineCount, setVisibleLineCount] = useState(0);
+  const [phoneConnectorPath, setPhoneConnectorPath] = useState('');
+  const [renderedTerminalWidth, setRenderedTerminalWidth] = useState(null);
   const outputRef = useRef(null);
+  const rootRef = useRef(null);
   const timeoutIdsRef = useRef([]);
+  const onPhoneTriggerRef = useRef(onPhoneTrigger);
   const onPhaseCompleteRef = useRef(onPhaseComplete);
+  const hasReportedBubbleCompletionRef = useRef(false);
+  const hasTriggeredPhoneRef = useRef(false);
   const hasReportedRunCompletionRef = useRef(false);
   const hasReportedCollapseCompletionRef = useRef(false);
 
   useEffect(() => {
+    onPhoneTriggerRef.current = onPhoneTrigger;
+  }, [onPhoneTrigger]);
+
+  useEffect(() => {
     onPhaseCompleteRef.current = onPhaseComplete;
   }, [onPhaseComplete]);
+
+  useLayoutEffect(() => {
+    if (!rootRef.current) {
+      return undefined;
+    }
+
+    const rootNode = rootRef.current;
+
+    const measureWidth = () => {
+      const { width } = rootNode.getBoundingClientRect();
+
+      setRenderedTerminalWidth((currentWidth) => {
+        if (currentWidth !== null && Math.abs(currentWidth - width) < 0.25) {
+          return currentWidth;
+        }
+
+        return width;
+      });
+    };
+
+    measureWidth();
+
+    const resizeObserver = new ResizeObserver(() => {
+      measureWidth();
+    });
+
+    resizeObserver.observe(rootNode);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!layout || !rootRef.current) {
+      setPhoneConnectorPath('');
+      return;
+    }
+
+    const rootRect = rootRef.current.getBoundingClientRect();
+    const rootLeftInStage = rootRect.left - layout.stageLeft;
+    const rootTopInStage = rootRect.top - layout.stageTop;
+    const bubbleX = rootRect.width / 2;
+    const bubbleY = rootRect.height / 2;
+    const phoneX = layout.phoneTriggerX - rootLeftInStage;
+    const phoneY = layout.phoneTriggerY - rootTopInStage;
+
+    setPhoneConnectorPath(
+      buildPhoneConnectorPath({
+        bubbleX,
+        bubbleY,
+        phoneX,
+        phoneY,
+      }),
+    );
+  }, [layout, phase]);
 
   useEffect(() => {
     timeoutIdsRef.current.forEach((timeoutId) => clearTimeout(timeoutId));
@@ -70,6 +188,8 @@ function IntroTerminal({ phase = 'hidden', onPhaseComplete }) {
 
     if (phase === 'hidden') {
       setVisibleLineCount(0);
+      hasReportedBubbleCompletionRef.current = false;
+      hasTriggeredPhoneRef.current = false;
       hasReportedRunCompletionRef.current = false;
       hasReportedCollapseCompletionRef.current = false;
       return undefined;
@@ -77,9 +197,47 @@ function IntroTerminal({ phase = 'hidden', onPhaseComplete }) {
 
     if (phase === 'visible') {
       setVisibleLineCount(0);
+      hasReportedBubbleCompletionRef.current = false;
+      hasTriggeredPhoneRef.current = false;
       hasReportedRunCompletionRef.current = false;
       hasReportedCollapseCompletionRef.current = false;
       return undefined;
+    }
+
+    if (phase === 'sources') {
+      setVisibleLineCount(0);
+      hasReportedBubbleCompletionRef.current = false;
+      hasTriggeredPhoneRef.current = false;
+      hasReportedRunCompletionRef.current = false;
+      hasReportedCollapseCompletionRef.current = false;
+
+      const sourcesTimeoutId = window.setTimeout(() => {
+        onPhaseCompleteRef.current?.('sources');
+      }, SOURCE_SETTLE_MS);
+
+      timeoutIdsRef.current.push(sourcesTimeoutId);
+      return () => {
+        timeoutIdsRef.current.forEach((timeoutId) => clearTimeout(timeoutId));
+        timeoutIdsRef.current = [];
+      };
+    }
+
+    if (phase === 'feeding') {
+      setVisibleLineCount(0);
+      hasReportedBubbleCompletionRef.current = false;
+      hasTriggeredPhoneRef.current = false;
+      hasReportedRunCompletionRef.current = false;
+      hasReportedCollapseCompletionRef.current = false;
+
+      const feedingTimeoutId = window.setTimeout(() => {
+        onPhaseCompleteRef.current?.('feeding');
+      }, FEEDING_MS);
+
+      timeoutIdsRef.current.push(feedingTimeoutId);
+      return () => {
+        timeoutIdsRef.current.forEach((timeoutId) => clearTimeout(timeoutId));
+        timeoutIdsRef.current = [];
+      };
     }
 
     if (phase === 'collapsing') {
@@ -103,10 +261,51 @@ function IntroTerminal({ phase = 'hidden', onPhaseComplete }) {
 
     if (phase === 'bubble') {
       setVisibleLineCount(TERMINAL_LINES.length);
+      hasTriggeredPhoneRef.current = false;
+
+      const bubbleTimeoutId = window.setTimeout(() => {
+        if (hasReportedBubbleCompletionRef.current) {
+          return;
+        }
+
+        hasReportedBubbleCompletionRef.current = true;
+        onPhaseCompleteRef.current?.('bubble');
+      }, BUBBLE_SETTLE_MS);
+
+      timeoutIdsRef.current.push(bubbleTimeoutId);
+      return () => {
+        timeoutIdsRef.current.forEach((timeoutId) => clearTimeout(timeoutId));
+        timeoutIdsRef.current = [];
+      };
+    }
+
+    if (phase === 'connectingToPhone') {
+      setVisibleLineCount(TERMINAL_LINES.length);
+
+      const handoffTimeoutId = window.setTimeout(() => {
+        if (!hasTriggeredPhoneRef.current) {
+          hasTriggeredPhoneRef.current = true;
+          onPhoneTriggerRef.current?.();
+        }
+
+        onPhaseCompleteRef.current?.('connectingToPhone');
+      }, CONNECT_TO_PHONE_MS);
+
+      timeoutIdsRef.current.push(handoffTimeoutId);
+      return () => {
+        timeoutIdsRef.current.forEach((timeoutId) => clearTimeout(timeoutId));
+        timeoutIdsRef.current = [];
+      };
+    }
+
+    if (phase === 'handoffToPhone') {
+      setVisibleLineCount(TERMINAL_LINES.length);
       return undefined;
     }
 
     setVisibleLineCount(0);
+    hasReportedBubbleCompletionRef.current = false;
+    hasTriggeredPhoneRef.current = false;
     hasReportedRunCompletionRef.current = false;
     hasReportedCollapseCompletionRef.current = false;
 
@@ -154,11 +353,68 @@ function IntroTerminal({ phase = 'hidden', onPhaseComplete }) {
     return null;
   }
 
+  if (!layout) {
+    return null;
+  }
+
+  const measuredTerminalWidth = renderedTerminalWidth ?? layout.terminalWidth;
+  const gapCenterX = layout.phoneLeft / 2;
+  const terminalLeft = gapCenterX - measuredTerminalWidth * TERMINAL_GAP_CENTERING_FACTOR;
+  const introStyle = {
+    '--intro-terminal-width': `${Math.round(layout.terminalWidth)}px`,
+    left: `${terminalLeft}px`,
+    top: `${layout.terminalCenterY}px`,
+  };
+
   return (
     <aside
       aria-label="Scripted risk simulation terminal"
       className={`intro-terminal intro-terminal--${phase}`}
+      ref={rootRef}
+      style={introStyle}
     >
+      <div className="intro-terminal__source-layer">
+        <div className="intro-terminal__source-strip">
+          {SOURCE_FEEDS.map((source) => (
+            <div className={`intro-terminal__source-chip intro-terminal__source-chip--${source.type}`} key={source.id}>
+              <span className="intro-terminal__source-label">{source.label}</span>
+              <span className={`intro-terminal__source-icon intro-terminal__source-icon--${source.type}`}>
+                <SourceIcon type={source.type} />
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <svg
+          aria-hidden="true"
+          className="intro-terminal__connectors"
+          preserveAspectRatio="none"
+          viewBox="0 0 240 120"
+        >
+          <path
+            className="intro-terminal__connector-path intro-terminal__connector-path--sensor"
+            d="M38 82 L58 120"
+            pathLength="1"
+          />
+          <path
+            className="intro-terminal__connector-path intro-terminal__connector-path--weather"
+            d="M120 82 L120 120"
+            pathLength="1"
+          />
+          <path
+            className="intro-terminal__connector-path intro-terminal__connector-path--satellite"
+            d="M202 82 L182 120"
+            pathLength="1"
+          />
+        </svg>
+      </div>
+
+      {phoneConnectorPath ? (
+        <svg aria-hidden="true" className="intro-terminal__phone-connector" preserveAspectRatio="none">
+          <path className="intro-terminal__phone-connector-path" d={phoneConnectorPath} pathLength="1" />
+        </svg>
+      ) : null}
+
       <div className="intro-terminal__window">
         <div className="intro-terminal__shell">
           <header className="intro-terminal__topbar">
@@ -191,7 +447,7 @@ function IntroTerminal({ phase = 'hidden', onPhaseComplete }) {
                 </p>
               ))}
 
-              {phase === 'visible' || phase === 'running' ? (
+              {phase === 'visible' || phase === 'sources' || phase === 'feeding' || phase === 'running' ? (
                 <div className="intro-terminal__cursor-row" aria-hidden="true">
                   <span className="intro-terminal__cursor-label">_</span>
                   <span className="intro-terminal__cursor" />

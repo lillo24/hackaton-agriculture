@@ -18,7 +18,7 @@ Why these live together
 
 Non-obvious behavior
 - The app home route now resolves to `/dashboard`, which is intentionally a minimal placeholder for the future daily farmer dashboard.
-- In phone preview, the initial `/dashboard` visit now opens with a staged shell intro (`terminal visible -> terminal running -> terminal collapsing -> bubble`) and intentionally stops on the bubble until the shell-level control is used to skip or replay it.
+- In phone preview, the initial `/dashboard` visit now opens with a staged shell intro (`terminal visible -> sources -> feeding -> terminal running -> terminal collapsing -> bubble -> phone connector -> phone startup`); the phone stays in its own centered layer, while the terminal overlay is positioned from `phoneLeft = phoneRect.left - stageRect.left` and the rendered terminal width using `terminalLeft = (phoneLeft / 2) - (terminalWidth / 2)`, and the phone startup only begins once the outgoing connector visually reaches the phone.
 - Selected alert state is stored in `App.jsx`; `/alert` reads that state and renders an empty quiet placeholder when no alert has been selected yet.
 - Legacy `/alerts/:alertId` links are supported by redirecting to `/alert` while synchronizing selected-alert state.
 - Roadmap mode is a shell-only presentation view and intentionally does not render the routed app pages while active.

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import './PhoneFrame.css';
 
@@ -44,14 +44,14 @@ function buildStartupNotification(alert) {
   };
 }
 
-function PhoneFrame({
+const PhoneFrame = forwardRef(function PhoneFrame({
   children,
   startupAlert = null,
   enableStartupSequence = false,
   startupShouldBegin = false,
   startupSequenceKey = 0,
   onStartupSequenceComplete,
-}) {
+}, ref) {
   const location = useLocation();
   const navigate = useNavigate();
   const [startupPhase, setStartupPhase] = useState(enableStartupSequence ? 'off' : 'app');
@@ -133,7 +133,7 @@ function PhoneFrame({
   }
 
   return (
-    <div className={`phone-body${startupPhase === 'vibrating' ? ' phone-body--vibrating' : ''}`}>
+    <div className={`phone-body${startupPhase === 'vibrating' ? ' phone-body--vibrating' : ''}`} ref={ref}>
       <div className="phone-bezel">
         <div className={`phone-screen${isStartupActive ? ` phone-screen--${startupPhase}` : ''}`}>
           <div
@@ -182,6 +182,6 @@ function PhoneFrame({
       </div>
     </div>
   );
-}
+});
 
 export default PhoneFrame;

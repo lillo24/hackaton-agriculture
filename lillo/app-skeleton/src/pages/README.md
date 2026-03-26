@@ -18,7 +18,7 @@ Why these live together
 Non-obvious behavior
 - `AlertsPage` ranking uses weighted urgency: severity, farm relevance, status urgency, then recency as tie influence.
 - Alert filters are URL-backed (`severity`, `source`, `history`) so list context survives navigation.
-- The filter strip intentionally avoids top labels and per-view totals, exposing minimal controls (including a `history` toggle) plus `Clear filters` when needed.
+- The filter strip intentionally avoids top labels and per-view totals, exposing only minimal controls (including a `history` toggle).
 - The alert filter strip is sticky and full-bleed at the top of the scrollable page area, so controls remain visible and visually detached from card-width constraints.
 - The `history` toggle appends a local fake archived alert card used for pitch/demo context; it is intentionally muted and non-interactive.
 - `AlertsPage` keeps top-priority and non-critical alerts directly in-feed (without titled wrappers) and sets app-level selected alert state when a user opens any alert card.
@@ -32,5 +32,5 @@ Non-obvious behavior
 - `DashboardPage` is mode-aware through CSS shell classes: in `phone` preview, alerts render first and hide extra alert subtitle copy while preserving count/chip visibility.
 - `DashboardPage` stacks water/moisture summary cards on separate rows in `phone` preview and hides those cards' subtitle descriptions to reduce clutter.
 - `DashboardPage` keeps rounded cards in desktop preview, while `phone` preview uses full-bleed card blocks (edge-to-edge width) with square corners.
-- `ProfilePage` keeps connected-source state intentionally binary with icon-symbol emphasis (`green` active, `red` broken) in a floating horizontal strip on the farm scene.
+- `ProfilePage` keeps connected-source state intentionally binary with icon-symbol emphasis (`green` active, `red` broken) in a floating horizontal strip on the farm scene, and now pulls those symbols from the shared `SourceIcon` component so the intro overlay and profile tell the same source-integration story.
 - `ProfilePage` intentionally collapses to a single centered stage so the farm visual remains the focal point and no right-side identity column consumes space.

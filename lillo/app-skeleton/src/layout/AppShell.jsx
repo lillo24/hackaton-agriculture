@@ -1,9 +1,56 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import IntroTerminal from '../components/IntroTerminal';
 import PhoneFrame from '../components/PhoneFrame';
 import RoadmapPresentation from './RoadmapPresentation';
 import './AppShell.css';
+
+const INTRO_TERMINAL_MAX_WIDTH = 620;
+const INTRO_TERMINAL_MIN_WIDTH = 300;
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+
+// The intro overlay is measured from the actual rendered phone position so the phone
+// can stay centered while the terminal lands in the real left gap.
+function buildPitchIntroLayout(stageNode, phoneNode) {
+  const stageRect = stageNode.getBoundingClientRect();
+  const phoneRect = phoneNode.getBoundingClientRect();
+
+  if (!stageRect.width || !stageRect.height || !phoneRect.width || !phoneRect.height) {
+    return null;
+  }
+
+  const phoneLeft = phoneRect.left - stageRect.left;
+  const phoneCenterY = phoneRect.top - stageRect.top + phoneRect.height / 2;
+  const leftGapWidth = Math.max(phoneLeft, 0);
+  const phoneTriggerX = phoneLeft + Math.min(24, phoneRect.width * 0.08);
+  const phoneTriggerY = phoneCenterY - Math.min(20, phoneRect.height * 0.035);
+  // Prefer the measured left-gap fit, but keep a readable fallback width on cramped stages.
+  const terminalFittedWidth = Math.min(INTRO_TERMINAL_MAX_WIDTH, Math.max(leftGapWidth - 24, 0));
+  const terminalMinimumWidth = Math.min(INTRO_TERMINAL_MIN_WIDTH, Math.max(leftGapWidth - 24, 220));
+  const terminalWidth = Math.max(terminalFittedWidth, terminalMinimumWidth);
+  const terminalCenterY = clamp(
+    phoneCenterY - Math.min(48, phoneRect.height * 0.08),
+    182,
+    stageRect.height - 172,
+  );
+
+  return {
+    leftGapWidth,
+    phoneCenterY,
+    phoneLeft,
+    phoneTriggerX,
+    phoneTriggerY,
+    stageLeft: stageRect.left,
+    stageTop: stageRect.top,
+    stageHeight: stageRect.height,
+    stageWidth: stageRect.width,
+    terminalCenterY,
+    terminalWidth,
+  };
+}
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: 'dashboard', end: true },
@@ -87,28 +134,79 @@ function PreviewApp({ previewMode }) {
 function AppShell({ alerts = [] }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const stageRef = useRef(null);
+  const phoneFrameRef = useRef(null);
   const [previewMode, setPreviewMode] = useState('phone');
   const [startupSequencePending, setStartupSequencePending] = useState(
     location.pathname === '/' || location.pathname === '/dashboard',
   );
+  const [phoneStartupShouldBegin, setPhoneStartupShouldBegin] = useState(false);
   const [startupSequenceKey, setStartupSequenceKey] = useState(0);
   const [terminalPhase, setTerminalPhase] = useState('hidden');
+  const [introLayout, setIntroLayout] = useState(null);
   const previewApp = <PreviewApp previewMode={previewMode} />;
   const isRoadmap = previewMode === 'roadmap';
   const isPhonePreview = previewMode === 'phone';
   const isDashboardRoute = location.pathname === '/dashboard';
   const startupAlert = alerts[0] ?? null;
-  const shouldQueueTerminalIntro = isPhonePreview && isDashboardRoute && startupSequencePending;
-  const isTerminalBubbleActive = isPhonePreview && isDashboardRoute && terminalPhase === 'bubble';
-  const shouldHoldIntroStage = shouldQueueTerminalIntro || isTerminalBubbleActive;
+  const shouldHoldIntroStage = isPhonePreview && isDashboardRoute && startupSequencePending;
+  const shouldQueueTerminalIntro = shouldHoldIntroStage && !phoneStartupShouldBegin;
   const isTerminalIntroActive = isPhonePreview && isDashboardRoute && terminalPhase !== 'hidden';
   const canStartTerminalSequence = shouldQueueTerminalIntro && terminalPhase === 'visible';
 
+  useLayoutEffect(() => {
+    if (!isPhonePreview) {
+      setIntroLayout(null);
+      return undefined;
+    }
+
+    const stageNode = stageRef.current;
+    const phoneNode = phoneFrameRef.current;
+
+    if (!stageNode || !phoneNode) {
+      return undefined;
+    }
+
+    let frameId = 0;
+
+    const measureLayout = () => {
+      frameId = 0;
+      setIntroLayout(buildPitchIntroLayout(stageNode, phoneNode));
+    };
+
+    const scheduleMeasure = () => {
+      if (frameId) {
+        window.cancelAnimationFrame(frameId);
+      }
+
+      frameId = window.requestAnimationFrame(measureLayout);
+    };
+
+    scheduleMeasure();
+
+    const resizeObserver = new ResizeObserver(() => {
+      scheduleMeasure();
+    });
+
+    resizeObserver.observe(stageNode);
+    resizeObserver.observe(phoneNode);
+    window.addEventListener('resize', scheduleMeasure);
+
+    return () => {
+      if (frameId) {
+        window.cancelAnimationFrame(frameId);
+      }
+
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', scheduleMeasure);
+    };
+  }, [isPhonePreview]);
+
   useEffect(() => {
-    if (shouldQueueTerminalIntro) {
+    if (shouldQueueTerminalIntro && terminalPhase === 'hidden') {
       setTerminalPhase('visible');
     }
-  }, [shouldQueueTerminalIntro, startupSequenceKey]);
+  }, [shouldQueueTerminalIntro, startupSequenceKey, terminalPhase]);
 
   useEffect(() => {
     if (!canStartTerminalSequence) {
@@ -130,7 +228,7 @@ function AppShell({ alerts = [] }) {
       }
 
       event.preventDefault();
-      setTerminalPhase((currentPhase) => (currentPhase === 'visible' ? 'running' : currentPhase));
+      setTerminalPhase((currentPhase) => (currentPhase === 'visible' ? 'sources' : currentPhase));
     }
 
     window.addEventListener('keydown', handleKeyDown);
@@ -141,6 +239,7 @@ function AppShell({ alerts = [] }) {
   function handleReplayIntro() {
     setPreviewMode('phone');
     setStartupSequencePending(true);
+    setPhoneStartupShouldBegin(false);
     setTerminalPhase('hidden');
     setStartupSequenceKey((currentKey) => currentKey + 1);
 
@@ -151,14 +250,25 @@ function AppShell({ alerts = [] }) {
 
   function handleSkipIntro() {
     setStartupSequencePending(false);
+    setPhoneStartupShouldBegin(false);
     setTerminalPhase('hidden');
   }
 
   function handleStartTerminalSequence() {
-    setTerminalPhase((currentPhase) => (currentPhase === 'visible' ? 'running' : currentPhase));
+    setTerminalPhase((currentPhase) => (currentPhase === 'visible' ? 'sources' : currentPhase));
   }
 
   function handleTerminalPhaseComplete(completedPhase) {
+    if (completedPhase === 'sources') {
+      setTerminalPhase((currentPhase) => (currentPhase === 'sources' ? 'feeding' : currentPhase));
+      return;
+    }
+
+    if (completedPhase === 'feeding') {
+      setTerminalPhase((currentPhase) => (currentPhase === 'feeding' ? 'running' : currentPhase));
+      return;
+    }
+
     if (completedPhase === 'running') {
       setTerminalPhase((currentPhase) => (currentPhase === 'running' ? 'collapsing' : currentPhase));
       return;
@@ -166,8 +276,27 @@ function AppShell({ alerts = [] }) {
 
     if (completedPhase === 'collapsing') {
       setTerminalPhase((currentPhase) => (currentPhase === 'collapsing' ? 'bubble' : currentPhase));
-      setStartupSequencePending(false);
+      return;
     }
+
+    if (completedPhase === 'bubble') {
+      setTerminalPhase((currentPhase) => (currentPhase === 'bubble' ? 'connectingToPhone' : currentPhase));
+      return;
+    }
+
+    if (completedPhase === 'connectingToPhone') {
+      setTerminalPhase((currentPhase) => (currentPhase === 'connectingToPhone' ? 'handoffToPhone' : currentPhase));
+    }
+  }
+
+  function handleIntroPhoneTrigger() {
+    setPhoneStartupShouldBegin(true);
+  }
+
+  function handleStartupSequenceComplete() {
+    setStartupSequencePending(false);
+    setPhoneStartupShouldBegin(false);
+    setTerminalPhase('hidden');
   }
 
   return (
@@ -214,24 +343,37 @@ function AppShell({ alerts = [] }) {
           <RoadmapPresentation />
         ) : previewMode === 'phone' ? (
           <div
+            ref={stageRef}
             className={`app-shell__phone-pitch-stage${
-              isTerminalIntroActive ? ' app-shell__phone-pitch-stage--intro-active' : ''
-            }${canStartTerminalSequence ? ' app-shell__phone-pitch-stage--waiting' : ''}`}
+              canStartTerminalSequence ? ' app-shell__phone-pitch-stage--waiting' : ''
+            }`}
             onClick={canStartTerminalSequence ? handleStartTerminalSequence : undefined}
           >
-            <IntroTerminal
-              onPhaseComplete={handleTerminalPhaseComplete}
-              phase={isTerminalIntroActive ? terminalPhase : 'hidden'}
-            />
-            <PhoneFrame
-              enableStartupSequence={shouldHoldIntroStage}
-              startupAlert={startupAlert}
-              startupSequenceKey={startupSequenceKey}
-              startupShouldBegin={false}
-            >
-              {previewApp}
-            </PhoneFrame>
-            {isTerminalIntroActive ? <div aria-hidden="true" className="app-shell__phone-pitch-spacer" /> : null}
+            <div className="app-shell__phone-pitch-phone-layer">
+              <div className="app-shell__phone-pitch-phone-shell">
+                <PhoneFrame
+                  enableStartupSequence={shouldHoldIntroStage}
+                  onStartupSequenceComplete={handleStartupSequenceComplete}
+                  ref={phoneFrameRef}
+                  startupAlert={startupAlert}
+                  startupSequenceKey={startupSequenceKey}
+                  startupShouldBegin={phoneStartupShouldBegin}
+                >
+                  {previewApp}
+                </PhoneFrame>
+              </div>
+            </div>
+
+            {isTerminalIntroActive ? (
+              <div className="app-shell__phone-pitch-overlay">
+                <IntroTerminal
+                  layout={introLayout}
+                  onPhoneTrigger={handleIntroPhoneTrigger}
+                  onPhaseComplete={handleTerminalPhaseComplete}
+                  phase={terminalPhase}
+                />
+              </div>
+            ) : null}
           </div>
         ) : (
           <div className="desktop-preview-frame">{previewApp}</div>

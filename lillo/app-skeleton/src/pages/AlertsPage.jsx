@@ -135,7 +135,6 @@ function AlertsPage({
   const severityFilter = readFilter(searchParams, 'severity', alertSeverityScale);
   const sourceFilter = readFilter(searchParams, 'source', sourceOptions.map((source) => source.id));
   const historyEnabled = searchParams.get('history') === '1';
-  const hasActiveFilters = [severityFilter, sourceFilter].some((value) => value !== 'all') || historyEnabled;
   const filteredAlerts = useMemo(
     () => {
       const baseAlerts = rankedAlerts.filter((alert) => {
@@ -184,7 +183,6 @@ function AlertsPage({
     return nextGroups;
   }, [filteredAlerts]);
 
-  const hasActionNow = groupedAlerts.actionNow.length > 0;
   const returnTo = `${location.pathname}${location.search}`;
 
   function updateFilter(filterName, nextValue) {
@@ -199,10 +197,6 @@ function AlertsPage({
     }
 
     setSearchParams(nextSearch, { replace: true });
-  }
-
-  function clearFilters() {
-    setSearchParams({}, { replace: true });
   }
 
   function toggleHistory() {
@@ -313,13 +307,6 @@ function AlertsPage({
           </div>
         </div>
 
-        {hasActiveFilters ? (
-          <div className="filter-footer">
-            <button className="inline-action" onClick={clearFilters} type="button">
-              Clear filters
-            </button>
-          </div>
-        ) : null}
       </section>
 
       {isLoading ? <AlertsLoadingState /> : null}
@@ -333,17 +320,6 @@ function AlertsPage({
       {!isLoading && alerts.length > 0 && filteredAlerts.length === 0 ? (
         <SectionCard subtitle="No alerts match the current filter selection." title="No results for filters">
           <p className="detail-text">Try widening severity, source, or relevance to recover the full operational feed.</p>
-          {hasActiveFilters ? (
-            <button className="inline-action" onClick={clearFilters} type="button">
-              Clear filters
-            </button>
-          ) : null}
-        </SectionCard>
-      ) : null}
-
-      {!isLoading && filteredAlerts.length > 0 && !hasActionNow ? (
-        <SectionCard subtitle="Current alerts are mostly low intensity and stable states." title="No high-priority alerts">
-          <p className="detail-text">The feed remains healthy; keep regular checks active and follow the scheduled plan.</p>
         </SectionCard>
       ) : null}
 

@@ -1,13 +1,23 @@
 .intro-terminal {
-  --intro-terminal-width: clamp(24rem, 31vw, 29rem);
-  --intro-terminal-height: 17.75rem;
+  --intro-terminal-width: clamp(30rem, 38vw, 36rem);
+  --intro-terminal-height: 18.2rem;
   --intro-terminal-collapsed-height: 4rem;
+  --intro-terminal-bubble-large-size: 6.5rem;
   --intro-terminal-bubble-size: 4.75rem;
+  --intro-terminal-source-layer-height: 8rem;
+  --intro-terminal-morph-duration: 0.82s;
+  --intro-terminal-morph-ease: cubic-bezier(0.2, 0.82, 0.22, 1);
+  position: absolute;
+  left: 0;
+  top: 0;
   width: min(100%, var(--intro-terminal-width));
+  height: var(--intro-terminal-height);
   pointer-events: none;
   display: flex;
   justify-content: center;
   align-items: center;
+  transform: translateY(-50%);
+  overflow: visible;
 }
 
 .intro-terminal__window {
@@ -25,15 +35,18 @@
   box-shadow:
     0 30px 46px rgba(11, 18, 13, 0.26),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transform-origin: center center;
   color: #eef5ef;
   font-family: "IBM Plex Mono", "Cascadia Code", "SFMono-Regular", Consolas, monospace;
   transition:
-    width 0.34s cubic-bezier(0.22, 1, 0.36, 1),
-    height 0.34s cubic-bezier(0.22, 1, 0.36, 1),
-    border-radius 0.34s cubic-bezier(0.22, 1, 0.36, 1),
-    background 0.34s ease,
-    border-color 0.34s ease,
-    box-shadow 0.34s ease;
+    width var(--intro-terminal-morph-duration) var(--intro-terminal-morph-ease),
+    height var(--intro-terminal-morph-duration) var(--intro-terminal-morph-ease),
+    min-height var(--intro-terminal-morph-duration) var(--intro-terminal-morph-ease),
+    border-radius var(--intro-terminal-morph-duration) var(--intro-terminal-morph-ease),
+    background 0.56s ease,
+    border-color 0.56s ease,
+    box-shadow 0.56s ease,
+    transform var(--intro-terminal-morph-duration) var(--intro-terminal-morph-ease);
 }
 
 .intro-terminal__window::after {
@@ -44,6 +57,124 @@
   pointer-events: none;
 }
 
+.intro-terminal__source-layer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  height: var(--intro-terminal-source-layer-height);
+  isolation: isolate;
+  opacity: 0;
+  transform: translateY(0.6rem);
+  transition:
+    opacity 0.28s ease,
+    transform 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.intro-terminal__source-strip {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  z-index: 2;
+  width: min(100%, 25rem);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  transform: translateX(-50%);
+}
+
+.intro-terminal__source-chip {
+  display: grid;
+  justify-items: center;
+  gap: 0.48rem;
+  opacity: 1;
+}
+
+.intro-terminal__source-chip:nth-child(2) {
+  animation-delay: 140ms;
+}
+
+.intro-terminal__source-chip:nth-child(3) {
+  animation-delay: 280ms;
+}
+
+.intro-terminal__source-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(64, 79, 70, 0.92);
+}
+
+.intro-terminal__source-icon {
+  width: 3.65rem;
+  height: 3.65rem;
+  border-radius: 1.18rem;
+  display: grid;
+  place-items: center;
+  color: rgba(243, 248, 245, 0.98);
+  border: 1px solid rgba(220, 229, 224, 0.3);
+  background:
+    linear-gradient(180deg, rgba(248, 250, 248, 0.22), rgba(188, 198, 192, 0.1)),
+    rgba(18, 24, 20, 0.9);
+  backdrop-filter: blur(6px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+.intro-terminal__source-icon svg {
+  width: 1.62rem;
+  height: 1.62rem;
+  stroke: currentColor;
+  stroke-width: 2.05;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+.intro-terminal__connectors {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  z-index: 1;
+  width: min(100%, 25rem);
+  height: 100%;
+  transform: translateX(-50%);
+}
+
+.intro-terminal__connector-path {
+  fill: none;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  opacity: 0;
+  transition:
+    stroke-dashoffset 0.58s cubic-bezier(0.24, 0.9, 0.32, 1),
+    opacity 0.18s ease;
+}
+
+.intro-terminal__connector-path--sensor {
+  stroke: rgba(57, 77, 66, 0.98);
+}
+
+.intro-terminal__connector-path--weather {
+  stroke: rgba(57, 77, 66, 0.98);
+}
+
+.intro-terminal__connector-path--satellite {
+  stroke: rgba(57, 77, 66, 0.98);
+}
+
+.intro-terminal__connector-path:nth-child(2) {
+  transition-delay: 80ms;
+}
+
+.intro-terminal__connector-path:nth-child(3) {
+  transition-delay: 160ms;
+}
+
 .intro-terminal__shell {
   position: relative;
   z-index: 1;
@@ -51,9 +182,9 @@
   flex-direction: column;
   min-height: 100%;
   transition:
-    opacity 0.22s ease,
-    transform 0.34s cubic-bezier(0.22, 1, 0.36, 1),
-    filter 0.34s ease;
+    opacity 0.36s ease,
+    transform 0.7s cubic-bezier(0.2, 0.82, 0.22, 1),
+    filter 0.7s ease;
 }
 
 .intro-terminal__topbar {
@@ -66,6 +197,10 @@
   padding: 0.9rem 1rem 0.88rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   background: rgba(248, 250, 248, 0.04);
+  transition:
+    opacity 0.2s ease,
+    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    visibility 0s linear 0.28s;
 }
 
 .intro-terminal__dots {
@@ -138,6 +273,18 @@
   color: #abefbf;
 }
 
+.intro-terminal__status--sources,
+.intro-terminal__status--feeding {
+  background: rgba(184, 193, 197, 0.18);
+  color: rgba(226, 232, 234, 0.9);
+}
+
+.intro-terminal__status--connectingToPhone,
+.intro-terminal__status--handoffToPhone {
+  background: rgba(184, 193, 197, 0.18);
+  color: rgba(232, 237, 239, 0.92);
+}
+
 .intro-terminal__status--collapsing {
   background: rgba(233, 191, 121, 0.18);
   color: #f0c77d;
@@ -179,8 +326,8 @@
 }
 
 .intro-terminal__output {
-  min-height: 9.95rem;
-  max-height: 9.95rem;
+  min-height: 10.15rem;
+  max-height: 10.15rem;
   overflow: auto;
   padding-right: 0.18rem;
   scrollbar-width: none;
@@ -263,8 +410,8 @@
   transform: translate(-50%, -50%) scale(0.6);
   opacity: 0;
   transition:
-    opacity 0.24s ease,
-    transform 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+    opacity 0.34s ease,
+    transform 0.72s cubic-bezier(0.2, 0.82, 0.22, 1);
 }
 
 .intro-terminal__core-ring,
@@ -294,19 +441,103 @@
     0 0 0 1px rgba(255, 255, 255, 0.16) inset;
 }
 
+.intro-terminal__phone-connector {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.intro-terminal__phone-connector-path {
+  fill: none;
+  stroke: rgba(195, 201, 204, 0.76);
+  stroke-width: 1.85;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  opacity: 0;
+  transition:
+    stroke-dashoffset 0.84s cubic-bezier(0.24, 0.9, 0.32, 1),
+    opacity 0.18s ease;
+}
+
+.intro-terminal--sources .intro-terminal__source-layer,
+.intro-terminal--feeding .intro-terminal__source-layer,
+.intro-terminal--running .intro-terminal__source-layer {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.intro-terminal--sources .intro-terminal__source-chip,
+.intro-terminal--feeding .intro-terminal__source-chip,
+.intro-terminal--running .intro-terminal__source-chip {
+  animation: intro-terminal-source-pulse 2.2s ease-in-out infinite;
+}
+
+.intro-terminal--feeding .intro-terminal__connector-path,
+.intro-terminal--running .intro-terminal__connector-path {
+  opacity: 1;
+  stroke-dashoffset: 0;
+}
+
+.intro-terminal--bubble .intro-terminal__phone-connector-path {
+  opacity: 0;
+}
+
+.intro-terminal--connectingToPhone .intro-terminal__phone-connector-path,
+.intro-terminal--handoffToPhone .intro-terminal__phone-connector-path {
+  opacity: 1;
+  stroke-dashoffset: 0;
+}
+
 .intro-terminal--collapsing .intro-terminal__window {
-  height: var(--intro-terminal-collapsed-height);
+  width: var(--intro-terminal-bubble-large-size);
+  min-height: var(--intro-terminal-bubble-large-size);
+  height: var(--intro-terminal-bubble-large-size);
   border-radius: 999px;
+  border-color: rgba(146, 188, 158, 0.32);
+  background:
+    radial-gradient(circle at 34% 30%, rgba(255, 255, 255, 0.2), transparent 28%),
+    radial-gradient(circle at center, rgba(112, 170, 122, 0.16), rgba(8, 13, 9, 0.95) 72%),
+    linear-gradient(180deg, rgba(12, 18, 13, 0.98), rgba(5, 8, 6, 1));
   box-shadow:
-    0 24px 40px rgba(11, 18, 13, 0.24),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    0 26px 42px rgba(11, 18, 13, 0.24),
+    0 0 0 1px rgba(162, 212, 177, 0.06) inset;
+  transform: scale(1.01);
+}
+
+.intro-terminal--collapsing .intro-terminal__source-layer,
+.intro-terminal--bubble .intro-terminal__source-layer {
+  opacity: 0;
+  transform: translateY(-0.35rem);
+}
+
+.intro-terminal--collapsing .intro-terminal__topbar,
+.intro-terminal--bubble .intro-terminal__topbar,
+.intro-terminal--connectingToPhone .intro-terminal__topbar,
+.intro-terminal--handoffToPhone .intro-terminal__topbar {
+  opacity: 0;
+  transform: translateY(-0.45rem);
+  visibility: hidden;
+}
+
+.intro-terminal--handoffToPhone {
+  opacity: 0.78;
 }
 
 .intro-terminal--collapsing .intro-terminal__shell,
 .intro-terminal--bubble .intro-terminal__shell {
   opacity: 0;
-  transform: scaleY(0.72);
-  filter: blur(10px);
+  transform: scale(0.76);
+  filter: blur(12px);
+}
+
+.intro-terminal--bubble .intro-terminal__shell,
+.intro-terminal--connectingToPhone .intro-terminal__shell,
+.intro-terminal--handoffToPhone .intro-terminal__shell {
+  visibility: hidden;
 }
 
 .intro-terminal--collapsing .intro-terminal__core,
@@ -315,7 +546,7 @@
 }
 
 .intro-terminal--collapsing .intro-terminal__core {
-  transform: translate(-50%, -50%) scale(0.94);
+  transform: translate(-50%, -50%) scale(1.08);
 }
 
 .intro-terminal--bubble .intro-terminal__window {
@@ -334,6 +565,28 @@
 }
 
 .intro-terminal--bubble .intro-terminal__core {
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.intro-terminal--connectingToPhone .intro-terminal__window,
+.intro-terminal--handoffToPhone .intro-terminal__window {
+  width: var(--intro-terminal-bubble-size);
+  min-height: var(--intro-terminal-bubble-size);
+  height: var(--intro-terminal-bubble-size);
+  border-radius: 999px;
+  border-color: rgba(142, 184, 154, 0.34);
+  background:
+    radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.24), transparent 26%),
+    radial-gradient(circle at center, rgba(111, 173, 121, 0.2), rgba(10, 16, 11, 0.94) 64%),
+    linear-gradient(180deg, rgba(14, 22, 16, 0.98), rgba(5, 8, 6, 1));
+  box-shadow:
+    0 26px 42px rgba(11, 18, 13, 0.28),
+    0 0 0 1px rgba(162, 212, 177, 0.08) inset;
+}
+
+.intro-terminal--connectingToPhone .intro-terminal__core,
+.intro-terminal--handoffToPhone .intro-terminal__core {
+  opacity: 1;
   transform: translate(-50%, -50%) scale(1);
 }
 
@@ -361,14 +614,33 @@
   }
 }
 
-@media (max-width: 900px) {
-  .intro-terminal {
-    width: min(100%, 27rem);
+@keyframes intro-terminal-source-pulse {
+  0%,
+  100% {
+    opacity: 0.92;
   }
 
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 960px) {
   .intro-terminal__window {
     min-height: 16.6rem;
     height: 16.6rem;
+  }
+
+  .intro-terminal__source-layer {
+    height: 7.25rem;
+  }
+
+  .intro-terminal__source-strip {
+    width: min(100%, 22rem);
+  }
+
+  .intro-terminal__connectors {
+    width: min(100%, 22rem);
   }
 
   .intro-terminal__output {
@@ -380,12 +652,17 @@
 @media (prefers-reduced-motion: reduce) {
   .intro-terminal__window,
   .intro-terminal__shell,
-  .intro-terminal__core {
+  .intro-terminal__topbar,
+  .intro-terminal__core,
+  .intro-terminal__source-layer,
+  .intro-terminal__connector-path,
+  .intro-terminal__phone-connector-path {
     transition-duration: 0.01ms;
   }
 
   .intro-terminal__line,
-  .intro-terminal__cursor {
+  .intro-terminal__cursor,
+  .intro-terminal__source-chip {
     animation-duration: 0.01ms;
     animation-iteration-count: 1;
   }

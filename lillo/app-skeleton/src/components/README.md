@@ -4,10 +4,11 @@ Status: `DRAFT` because core primitives are stable, but profile visual cards wer
 
 Files
 - `README.md` - folder map for reusable UI pieces.
-- `IntroTerminal.jsx` (`DRAFT`) - scripted Bash-style simulation window that now morphs through `visible -> running -> collapsing -> bubble` so the shell can stop on a stable node before later connector work.
-- `IntroTerminal.css` (`DRAFT`) - cinematic terminal window styling, line reveal motion, vertical collapse treatment, and final bubble/node visuals for the pre-intro simulation panel.
-- `PhoneFrame.jsx` - reusable visual device shell that wraps arbitrary app content and keeps the phone asleep while the shell-level terminal intro is active; it still owns the later phone-side startup sequence for follow-up steps.
+- `IntroTerminal.jsx` (`DRAFT`) - scripted Bash-style simulation window that now runs `visible -> sources -> feeding -> running -> collapsing -> bubble -> connectingToPhone -> handoffToPhone`, including the shared source-icon strip, pre-run connector timing, and the bubble-to-phone callback, while measuring its rendered width and computing `terminalLeft = (phoneLeft / 2) - (terminalWidth / 2)` from the shell-provided phone bounds.
+- `IntroTerminal.css` (`DRAFT`) - cinematic terminal window styling, slightly wider Bash-window proportions, labeled source icon surfaces above the terminal, connector animation, a softer two-step morph from window -> larger bubble -> final bubble, the bubble-to-phone handoff line, and final node visuals for the pre-intro simulation panel.
+- `PhoneFrame.jsx` - reusable visual device shell that wraps arbitrary app content, keeps the phone asleep while the shell-level intro is active, forwards its root ref for shell-level measurement, and still owns the vibration/lock-screen startup sequence once the intro explicitly hands off to it.
 - `PhoneFrame.css` - premium bezel, notch, reflection, startup vibration, and lock-screen styling for the phone frame.
+- `SourceIcon.jsx` (`STABLE`) - shared source-symbol SVG set (`sensor`, `weather`, `satellite`) reused by Profile and the intro overlay so those surfaces tell the same integration story.
 - `PageHeader.jsx` - consistent title block used by route screens.
 - `SectionCard.jsx` - shared card wrapper for grouped page content.
 - `StatusBadge.jsx` - tone-aware pill for severities, statuses, and metadata tags.
@@ -22,9 +23,11 @@ Why these live together
 - `IntroTerminal` and `PhoneFrame` are both presentation primitives that the shell composes into the pitch intro, while the other components keep page markup lean and consistent.
 
 Non-obvious behavior
-- `IntroTerminal` is fully deterministic: it reveals a fixed array of simulation lines with per-line delays, reports when the run should enter the collapse phase, and then reports again after the shell has fully resolved into the final bubble.
+- `IntroTerminal` is fully deterministic: it first settles the source icons, then runs the connector-line feed, then starts the fixed log script, reports when the run should enter the collapse phase, pauses briefly on the bubble, and finally fires a bubble-to-phone handoff callback exactly when the phone connector finishes.
+- `IntroTerminal` now uses a softer two-step collapse: the wide terminal first eases into a larger round node during `collapsing`, then settles into the smaller stable bubble before the phone handoff begins.
+- `IntroTerminal` uses a single mounted root for both the source-feed overlay and the terminal body, and it observes that root's rendered width so the visible Bash window stays centered in the exact gap between the stage left edge and the phone left edge while the phone connector still originates from the same anchor.
 - `PhoneFrame` keeps the real routed app mounted underneath the intro overlay so the unlock animation can slide the fake lock screen away instead of remounting the app.
-- When the startup intro is enabled, `PhoneFrame` stays visually asleep while the shell-level terminal sequence runs or holds on the final bubble, so step 15 can stop before the later phone vibration handoff.
+- When the startup intro is enabled, `PhoneFrame` stays visually asleep while the shell-level intro runs, and only transitions from `off` to `vibrating` after the terminal overlay explicitly hands off control.
 - `PhoneFrame` only reports intro completion after the state machine reaches its final `app` state, which keeps replay/skip handling deterministic in the preview shell.
 - `SectionCard` accepts an optional `className` so pages can keep shared card semantics while overriding container tone for special layouts.
 - `WaterLevelCard` rescales chart Y positions from provided values so the curve remains readable without introducing dashboard-like chart complexity.

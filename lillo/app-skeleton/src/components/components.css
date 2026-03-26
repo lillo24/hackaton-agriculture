@@ -381,10 +381,10 @@
 
 .farm-visual-card__tile-status {
   --tile-status-float-height: 4px;
-  --tile-status-scale: 1;
+  --tile-status-scale: 1.08;
   transform-box: fill-box;
   transform-origin: center;
-  animation: tile-status-float 3.2s ease-in-out infinite;
+  animation: tile-status-float 2.4s ease-in-out infinite;
 }
 
 .farm-visual-card__tile-status-core {
@@ -407,14 +407,42 @@
 }
 
 .farm-visual-card__tile-status--warning .farm-visual-card__tile-status-core {
-  fill: #d46b5f;
+  fill: #e35242;
   stroke: rgba(255, 242, 240, 0.95);
   stroke-width: 1.6;
+  transform-box: fill-box;
+  transform-origin: center;
+  filter: drop-shadow(0 0 8px rgba(227, 82, 66, 0.5));
+  animation: tile-status-warning-pulse 0.78s ease-in-out infinite;
+}
+
+.farm-visual-card__tile-status--warning {
+  --tile-status-float-height: 6.5px;
+  --tile-status-scale: 1.2;
+  animation-duration: 1.15s;
 }
 
 .farm-visual-card__tile-status-dot {
   fill: #ffffff;
   stroke: none;
+}
+
+.farm-visual-card__tile-status-warning-mark {
+  fill: rgba(255, 255, 255, 0.96);
+  stroke: none;
+}
+
+.farm-visual-card__tile-status-warning-bar,
+.farm-visual-card__tile-status-warning-dot {
+  fill: #ffffff;
+  stroke: #121212;
+  stroke-width: 0.36;
+}
+
+.farm-visual-card__tile-status-warning-glyph {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: tile-status-warning-shake 0.62s ease-in-out infinite;
 }
 
 .farm-visual-card__tile-status--float-2 {
@@ -778,6 +806,42 @@
   }
 }
 
+@keyframes tile-status-warning-shake {
+  0%,
+  100% {
+    transform: translateX(0) rotate(0deg);
+  }
+
+  20% {
+    transform: translateX(-1.4px) rotate(-5.2deg);
+  }
+
+  40% {
+    transform: translateX(1.4px) rotate(5.2deg);
+  }
+
+  60% {
+    transform: translateX(-1.2px) rotate(-4.4deg);
+  }
+
+  80% {
+    transform: translateX(1.2px) rotate(4.4deg);
+  }
+}
+
+@keyframes tile-status-warning-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 6px rgba(227, 82, 66, 0.42));
+  }
+
+  50% {
+    transform: scale(1.18);
+    filter: drop-shadow(0 0 13px rgba(227, 82, 66, 0.72));
+  }
+}
+
 .mobile-app--desktop .farm-visual-card__signal-item {
   gap: 0.52rem;
   padding: 0.36rem 0.52rem;
@@ -853,23 +917,43 @@
     pointer-events: auto;
   }
 
+  .farm-visual-card__scene {
+    width: 107%;
+    margin-left: -3.5%;
+  }
+
   .farm-visual-card__signal-icon {
-    width: 27px;
-    height: 27px;
+    width: 33px;
+    height: 33px;
+  }
+
+  .farm-visual-card__signal-icon svg {
+    width: 18px;
+    height: 18px;
   }
 
   .farm-visual-card__signal-copy strong {
-    font-size: 0.7rem;
+    font-size: 0.75rem;
   }
 
   .farm-visual-card__signal-copy small {
-    font-size: 0.58rem;
+    font-size: 0.63rem;
   }
 
   .farm-visual-card__tile-status {
-    animation-duration: 2.8s;
-    --tile-status-float-height: 3.1px;
-    --tile-status-scale: 1.16;
+    animation-duration: 2.1s;
+    --tile-status-float-height: 3.5px;
+    --tile-status-scale: 1.38;
+  }
+
+  .farm-visual-card__tile-status--warning {
+    --tile-status-float-height: 5.6px;
+    --tile-status-scale: 1.43;
+    animation-duration: 1s;
+  }
+
+  .farm-visual-card__tile-status-warning-glyph {
+    animation-duration: 0.55s;
   }
 
   .farm-visual-card__pill {

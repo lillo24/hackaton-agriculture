@@ -57,6 +57,7 @@ const farmerNodes = FARMER_ARC_ANGLES.map((angle, index, angles) => {
     y: `${y.toFixed(2)}%`,
     delay: `${(0.08 + index * 0.07).toFixed(2)}s`,
     branchDelay: `${(0.42 + index * 0.11).toFixed(2)}s`,
+    collapseDelay: `${(0.42 + index * 0.06).toFixed(2)}s`,
     order: index - (angles.length - 1) / 2,
   };
 });
@@ -96,6 +97,30 @@ const costSlices = [
   { id: 'rollout', label: 'Rollout', time: '3w', cost: '€9k', weight: 50 },
   { id: 'ops', label: 'Ops mensile', time: 'continuo', cost: '€2k', weight: 20 },
 ];
+
+const costBoardSlices = [
+  { id: 'ui', label: 'UI + Prodotto', time: '2w', cost: '\u20ac6k', weight: 34, barDelay: '2.62s', markerTop: '10%', markerDelay: '3.16s' },
+  {
+    id: 'integration',
+    label: 'Integrazioni dati',
+    time: '5w',
+    cost: '\u20ac18k',
+    weight: 100,
+    primary: true,
+    barDelay: '2.76s',
+    markerTop: '45%',
+    markerDelay: '3.34s',
+  },
+  { id: 'rollout', label: 'Rollout', time: '3w', cost: '\u20ac9k', weight: 50, barDelay: '2.9s', markerTop: '85%', markerDelay: '3.52s' },
+];
+
+const COST_TOTALS = {
+  time: '10w',
+  cost: '\u20ac33k',
+};
+
+// Lift smaller bars more aggressively so the histogram uses the available board height.
+const getCostBarHeight = (weight) => Math.min(100, Math.round(56 + weight * 0.48));
 
 function CompanyIcon() {
   return (
@@ -225,8 +250,11 @@ function RoadmapPresentation() {
   const showBridge = step >= 3;
   const showFarmers = step >= 4;
   const showProfileFocus = step === FOCUS_STEP;
-  const showIdentikit = showProfileFocus && revealedProfileIds.length > 0;
-  const showFeaturedCase = step === FEATURED_STEP;
+  // Keep the small-farmer identikits mounted after the focus step so the featured farmer
+  // and the later collapse-to-Costi transition can reference the same emitted context.
+  const showIdentikit = step >= FOCUS_STEP && revealedProfileIds.length > 0;
+  // Keep the featured farmer mounted into the Costi step so it can retract as part of the reverse animation.
+  const showFeaturedCase = step >= FEATURED_STEP;
   const showCosts = step >= FEATURED_STEP + 1;
   const canAdvance = step < lastStep && !(showProfileFocus && !profileSequenceComplete);
   const activeProfileSequence = profileSequences[activeProfileIndex];
@@ -238,10 +266,14 @@ function RoadmapPresentation() {
   }, []);
 
   useEffect(() => {
-    if (!showProfileFocus) {
+    if (step < FOCUS_STEP) {
       setActiveProfileIndex(0);
       setRevealedProfileIds([]);
       setProfileSequenceComplete(false);
+      return undefined;
+    }
+
+    if (step > FOCUS_STEP) {
       return undefined;
     }
 
@@ -281,7 +313,7 @@ function RoadmapPresentation() {
       window.clearTimeout(secondFocusTimer);
       window.clearTimeout(secondBurstTimer);
     };
-  }, [showProfileFocus]);
+  }, [step]);
 
   useLayoutEffect(() => {
     const stageElement = stageRef.current;
@@ -376,16 +408,10 @@ function RoadmapPresentation() {
           const startX = formatPoint(companyBox.left + companyBox.width * 0.52);
           const startY = formatPoint(companyBox.bottom + 8);
           const endX = formatPoint(featuredBox.left + featuredBox.width * 0.26);
-          const endY = formatPoint(featuredBox.top + featuredBox.height * 0.28);
-          const deltaX = endX - startX;
-          const drop = Math.min(Math.max(height * 0.06, 22), 58);
+          const endY = formatPoint(featuredBox.top + featuredBox.height * 0.3);
+          const elbowY = formatPoint(startY + Math.min(Math.max(height * 0.17, 36), 88));
 
-          nextLayout.featuredPath = [
-            `M ${startX} ${startY}`,
-            `C ${formatPoint(startX + deltaX * 0.14)} ${formatPoint(startY + drop * 0.18)},`,
-            `${formatPoint(startX + deltaX * 0.72)} ${formatPoint(endY - drop * 0.26)},`,
-            `${endX} ${endY}`,
-          ].join(' ');
+          nextLayout.featuredPath = [`M ${startX} ${startY}`, `L ${startX} ${elbowY}`, `L ${endX} ${endY}`].join(' ');
         }
       }
 
@@ -472,7 +498,7 @@ function RoadmapPresentation() {
 
   return (
     <article
-      className={`roadmap-presentation roadmap-presentation--step-${step}${showProfileFocus ? ' roadmap-presentation--profile-focus' : ''}${showIdentikit ? ' roadmap-presentation--identikit' : ''}${showFeaturedCase ? ' roadmap-presentation--featured-case' : ''}`}
+      className={`roadmap-presentation roadmap-presentation--step-${step}${showProfileFocus ? ' roadmap-presentation--profile-focus' : ''}${showIdentikit ? ' roadmap-presentation--identikit' : ''}${showFeaturedCase ? ' roadmap-presentation--featured-case' : ''}${showCosts ? ' roadmap-presentation--costs' : ''}`}
       onClick={handleStageClick}
       onKeyDown={handleKeyDown}
       ref={roadmapRef}
@@ -504,7 +530,7 @@ function RoadmapPresentation() {
                 d={connectionLayout.branchPaths[node.id]}
                 key={`${node.id}-line`}
                 pathLength="1"
-                style={{ '--path-delay': node.branchDelay }}
+                style={{ '--path-delay': node.branchDelay, '--collapse-delay': node.collapseDelay }}
               />
             ))}
           </svg>
@@ -546,6 +572,7 @@ function RoadmapPresentation() {
                 '--node-delay': node.delay,
                 '--node-x': node.x,
                 '--node-y': node.y,
+                '--collapse-delay': node.collapseDelay,
               }}
             >
               <span className="roadmap-node__farmer-core">
@@ -610,7 +637,6 @@ function RoadmapPresentation() {
 
         {showFeaturedCase ? (
           <article aria-label="Azienda esempio" className="roadmap-featured-farmer" ref={featuredFarmerRef}>
-            <span className="roadmap-featured-farmer__eyebrow">Azienda esempio</span>
             <div className="roadmap-featured-farmer__body">
               <span className="roadmap-featured-farmer__icon">
                 <FarmerIcon />
@@ -624,33 +650,67 @@ function RoadmapPresentation() {
         ) : null}
 
         {showCosts ? (
-          <aside aria-label="Stima costi e tempi" className="roadmap-costs">
+          <aside aria-label="Costi e tempi" className="roadmap-costs">
+            <span aria-hidden="true" className="roadmap-costs__support roadmap-costs__support--left" />
+            <span aria-hidden="true" className="roadmap-costs__support roadmap-costs__support--right" />
+
+            <div className="roadmap-costs__panel">
             <header className="roadmap-costs__header">
-              <p className="roadmap-costs__title">Costi e tempi</p>
+              <p className="roadmap-costs__title">Costi</p>
               <p className="roadmap-costs__totals">
-                <span>~10 settimane</span>
+                <span>{COST_TOTALS.time}</span>
                 <span>~€33k</span>
               </p>
             </header>
 
-            <ul className="roadmap-costs__list">
-              {costSlices.map((slice) => (
-                <li
-                  className={`roadmap-costs__item${slice.primary ? ' is-primary' : ''}`}
-                  key={slice.id}
-                  style={{ '--cost-width': `${slice.weight}%` }}
-                >
-                  <p className="roadmap-costs__row">
-                    <span className="roadmap-costs__name">{slice.label}</span>
-                    <span className="roadmap-costs__time">{slice.time}</span>
-                    <span className="roadmap-costs__value">{slice.cost}</span>
-                  </p>
-                  <span aria-hidden="true" className="roadmap-costs__bar">
-                    <span />
-                  </span>
-                </li>
-              ))}
-            </ul>
+            <div className="roadmap-costs__body">
+              <ul className="roadmap-costs__chart">
+                {costBoardSlices.map((slice) => (
+                  <li className={`roadmap-costs__chart-item${slice.primary ? ' is-primary' : ''}`} key={slice.id}>
+                    <div className="roadmap-costs__plot">
+                      <span aria-hidden="true" className="roadmap-costs__bar-rail">
+                        <span
+                          className="roadmap-costs__bar"
+                          style={{
+                            '--cost-height': `${getCostBarHeight(slice.weight)}%`,
+                            '--bar-delay': slice.barDelay,
+                          }}
+                        />
+                      </span>
+                    </div>
+
+                    <p className="roadmap-costs__label">{slice.label}</p>
+                    <p className="roadmap-costs__meta">
+                      <span>{slice.time}</span>
+                      <span>{slice.cost}</span>
+                    </p>
+                  </li>
+                ))}
+              </ul>
+
+              <div aria-hidden="true" className="roadmap-costs__timeline">
+                <span className="roadmap-costs__timeline-rail">
+                  <span className="roadmap-costs__timeline-fill" />
+                </span>
+
+                <ul className="roadmap-costs__timeline-markers">
+                  {costBoardSlices.map((slice) => (
+                    <li
+                      className="roadmap-costs__timeline-marker"
+                      key={`timeline-${slice.id}`}
+                      style={{
+                        '--marker-top': slice.markerTop,
+                        '--marker-delay': slice.markerDelay,
+                      }}
+                    >
+                      <span className="roadmap-costs__timeline-dot" />
+                      <span className="roadmap-costs__timeline-text">{slice.time}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+            </div>
           </aside>
         ) : null}
 

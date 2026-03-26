@@ -166,38 +166,39 @@
 }
 
 .app-shell__phone-pitch-stage {
-  width: min(100%, 76rem);
-  min-height: 0;
-  display: grid;
-  align-items: center;
-  justify-items: center;
+  position: relative;
+  width: min(100%, 92rem);
+  height: min(100%, calc(var(--phone-available-height) + 9rem));
+  min-height: min(100%, calc(var(--phone-available-height) + 6rem));
+  overflow: visible;
 }
 
-.app-shell__phone-pitch-stage--intro-active {
-  grid-template-columns:
-    minmax(24rem, 1fr)
-    auto
-    minmax(7rem, 0.72fr);
-  column-gap: clamp(1.1rem, 2.8vw, 2.75rem);
+.app-shell__phone-pitch-phone-layer,
+.app-shell__phone-pitch-overlay {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+}
+
+.app-shell__phone-pitch-phone-layer {
+  z-index: 2;
+}
+
+.app-shell__phone-pitch-phone-shell {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: inline-flex;
+  transform: translate(-50%, -50%);
+}
+
+.app-shell__phone-pitch-overlay {
+  z-index: 1;
+  pointer-events: none;
 }
 
 .app-shell__phone-pitch-stage--waiting {
   cursor: pointer;
-}
-
-.app-shell__phone-pitch-stage--intro-active .intro-terminal {
-  grid-column: 1;
-  justify-self: center;
-}
-
-.app-shell__phone-pitch-stage--intro-active .phone-body {
-  grid-column: 2;
-}
-
-.app-shell__phone-pitch-spacer {
-  grid-column: 3;
-  width: 100%;
-  min-height: 1px;
 }
 
 .app-shell__preview-stage--desktop {
@@ -355,8 +356,8 @@
 }
 
 .mobile-app__nav-icon {
-  width: 16px;
-  height: 16px;
+  width: 19px;
+  height: 19px;
   stroke: currentColor;
   stroke-width: 1.8;
   stroke-linecap: round;
@@ -405,8 +406,8 @@
 }
 
 .mobile-app--desktop .mobile-app__nav-icon {
-  width: 15px;
-  height: 15px;
+  width: 17px;
+  height: 17px;
 }
 
 @media (max-width: 1200px) {
@@ -426,21 +427,6 @@
     align-items: start;
     overflow: auto;
     padding-block: 0.35rem 0.6rem;
-  }
-
-  .app-shell__phone-pitch-stage--intro-active {
-    grid-template-columns: minmax(0, 1fr);
-    row-gap: 1.1rem;
-  }
-
-  .app-shell__phone-pitch-stage--intro-active .intro-terminal,
-  .app-shell__phone-pitch-stage--intro-active .phone-body {
-    grid-column: 1;
-    justify-self: center;
-  }
-
-  .app-shell__phone-pitch-spacer {
-    display: none;
   }
 
   .desktop-preview-frame {
