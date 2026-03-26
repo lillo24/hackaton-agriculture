@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import PageHeader from '../components/PageHeader';
 import SectionCard from '../components/SectionCard';
 import SoilMoistureCard from '../components/SoilMoistureCard';
 import WaterLevelCard from '../components/WaterLevelCard';
@@ -126,63 +125,65 @@ function DashboardPage({ selectedFarm, alerts = [] }) {
 
   return (
     <div className="page dashboard-page">
-      <PageHeader title="Field pulse" />
-
       <div className="dashboard-priority-grid">
-        <SectionCard
-          subtitle="Placeholder for a future assistant integration."
-          title="AI assistant seed"
-        >
-          <div className="dashboard-assistant">
-            <div aria-live="polite" className="dashboard-assistant__thread">
-              <article className="dashboard-assistant__message dashboard-assistant__message--user">
-                <p>{assistantPrompt}</p>
-              </article>
-              <article className="dashboard-assistant__message dashboard-assistant__message--assistant">
-                <p>
-                  {assistantReply}
-                  {isAssistantTyping ? <span aria-hidden="true" className="dashboard-assistant__cursor">|</span> : null}
-                </p>
-              </article>
-            </div>
-
-            <form className="dashboard-assistant__composer" onSubmit={handleAssistantSubmit}>
-              <label className="dashboard-assistant__label" htmlFor="dashboard-assistant-input">
-                Ask something
-              </label>
-              <div className="dashboard-assistant__row">
-                <input
-                  id="dashboard-assistant-input"
-                  onChange={(event) => setAssistantDraft(event.target.value)}
-                  placeholder="Type a farm question..."
-                  type="text"
-                  value={assistantDraft}
-                />
-                <button type="submit">Mock reply</button>
+        <div className="dashboard-priority-grid__assistant">
+          <SectionCard
+            subtitle="Placeholder for a future assistant integration."
+            title="AI assistant seed"
+          >
+            <div className="dashboard-assistant">
+              <div aria-live="polite" className="dashboard-assistant__thread">
+                <article className="dashboard-assistant__message dashboard-assistant__message--user">
+                  <p>{assistantPrompt}</p>
+                </article>
+                <article className="dashboard-assistant__message dashboard-assistant__message--assistant">
+                  <p>
+                    {assistantReply}
+                    {isAssistantTyping ? <span aria-hidden="true" className="dashboard-assistant__cursor">|</span> : null}
+                  </p>
+                </article>
               </div>
-            </form>
-          </div>
-        </SectionCard>
 
-        <SectionCard
-          subtitle="Primary signal to watch."
-          title="Alerts"
-        >
-          <div className="dashboard-alert-focus">
-            <strong className="dashboard-alert-focus__total">{totalAlerts}</strong>
-            <p className="dashboard-alert-focus__summary">{alertVisualSummary}</p>
-            <div className="dashboard-severity-row">
-              <p className="dashboard-severity-pill dashboard-severity-pill--medium">
-                <span className="dashboard-severity-dot" />
-                {severityCounts.medium} medium
-              </p>
-              <p className="dashboard-severity-pill dashboard-severity-pill--high">
-                <span className="dashboard-severity-dot" />
-                {severityCounts.high} high
-              </p>
+              <form className="dashboard-assistant__composer" onSubmit={handleAssistantSubmit}>
+                <label className="dashboard-assistant__label" htmlFor="dashboard-assistant-input">
+                  Ask something
+                </label>
+                <div className="dashboard-assistant__row">
+                  <input
+                    id="dashboard-assistant-input"
+                    onChange={(event) => setAssistantDraft(event.target.value)}
+                    placeholder="Type a farm question..."
+                    type="text"
+                    value={assistantDraft}
+                  />
+                  <button type="submit">Mock reply</button>
+                </div>
+              </form>
             </div>
-          </div>
-        </SectionCard>
+          </SectionCard>
+        </div>
+
+        <div className="dashboard-priority-grid__alerts">
+          <SectionCard
+            subtitle="Primary signal to watch."
+            title="Alerts"
+          >
+            <div className="dashboard-alert-focus">
+              <strong className="dashboard-alert-focus__total">{totalAlerts}</strong>
+              <p className="dashboard-alert-focus__summary">{alertVisualSummary}</p>
+              <div className="dashboard-severity-row">
+                <p className="dashboard-severity-pill dashboard-severity-pill--medium">
+                  <span className="dashboard-severity-dot" />
+                  {severityCounts.medium} medium
+                </p>
+                <p className="dashboard-severity-pill dashboard-severity-pill--high">
+                  <span className="dashboard-severity-dot" />
+                  {severityCounts.high} high
+                </p>
+              </div>
+            </div>
+          </SectionCard>
+        </div>
       </div>
 
       <div className="dashboard-summary-grid">

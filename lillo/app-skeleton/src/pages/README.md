@@ -4,7 +4,7 @@ Status: `DRAFT` because the dashboard/profile/alert route refactor is complete, 
 
 Files
 - `README.md` (`STABLE`) - folder map for route-level screens and behavior notes.
-- `DashboardPage.jsx` (`DRAFT`) - home route with a top-priority row (AI assistant seed + alert count), then secondary water/soil widgets.
+- `DashboardPage.jsx` (`DRAFT`) - home route with split dashboard priority UI: desktop keeps AI + alert detail row, while phone simplifies to alerts-first with reduced metadata.
 - `ProfilePage.jsx` (`DRAFT`) - centered static farm scene with floating top-right signal icons and minimal read-only profile context.
 - `AlertsPage.jsx` (`DRAFT`) - ranked alerts feed with URL-backed filters, a flatter filter strip, and click-to-select behavior for the dedicated alert detail route.
 - `AlertDetailPage.jsx` (`DRAFT`) - dedicated `/alert` detail destination that renders the app-selected alert or a quiet empty state when nothing is selected.
@@ -26,5 +26,6 @@ Non-obvious behavior
 - `DashboardPage` derives water and soil summary card values from the active alert set (`primary` relevance count and active field list) to stay lightweight without introducing a new data layer.
 - `DashboardPage` intentionally removes old context copy/metadata blocks (`farm profile`, `plots tracked`, long intro description) so the top area shows only AI assistant + alert count.
 - `DashboardPage` keeps a visual alert sentence (`X alerts, Y medium and Z high`) derived from active severities and replays a deterministic mock assistant answer with a typewriter effect each time the local prompt is submitted.
+- `DashboardPage` is now mode-aware through CSS shell classes: in `phone` preview, alerts render first and hide extra alert copy (`Primary signal to watch`, severity sentence/chips) for compact usability.
 - `ProfilePage` keeps connected-source state intentionally binary with icon-symbol emphasis (`green` active, `red` broken) in a floating horizontal strip on the farm scene.
 - `ProfilePage` intentionally collapses to a single centered stage so the farm visual remains the focal point and no right-side identity column consumes space.

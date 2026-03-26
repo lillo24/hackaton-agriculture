@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import PhoneFrame from '../components/PhoneFrame';
 import RoadmapPresentation from './RoadmapPresentation';
 import './AppShell.css';
@@ -57,9 +57,12 @@ function NavIcon({ icon }) {
 }
 
 function PreviewApp({ previewMode }) {
+  const location = useLocation();
+  const contentClassName = `mobile-app__content${location.pathname === '/alerts' ? ' mobile-app__content--alerts' : ''}`;
+
   return (
     <div className={`mobile-app mobile-app--${previewMode}`}>
-      <main className="mobile-app__content">
+      <main className={contentClassName}>
         <Outlet />
       </main>
 

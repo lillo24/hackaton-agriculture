@@ -228,6 +228,17 @@
   border-radius: 999px;
 }
 
+.mobile-app__content--alerts {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.mobile-app__content--alerts::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
 .mobile-app__nav {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

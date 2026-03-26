@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import './RoadmapPresentation.css';
 
-const TOTAL_STEPS = 6;
+const TOTAL_STEPS = 8;
 
 const CONSORZIO_CENTER = { x: 50, y: 50 };
 const FARMER_ARC_ANGLES = [-72, -46, -20, 20, 46, 72];
@@ -38,6 +38,19 @@ const farmerNodes = FARMER_ARC_ANGLES.map((angle, index, angles) => {
     order: index - (angles.length - 1) / 2,
   };
 });
+
+const TOP_FARMER = farmerNodes.reduce((currentTop, node) => {
+  if (parseFloat(node.y) < parseFloat(currentTop.y)) {
+    return node;
+  }
+
+  return currentTop;
+}, farmerNodes[0]);
+
+const identikitTokens = [
+  { id: 'sensor', label: 'Sensori', icon: 'sensor', offsetX: -78, offsetY: -88, delay: '0.02s' },
+  { id: 'crop', label: 'Coltura', icon: 'crop', offsetX: 88, offsetY: -30, delay: '0.12s' },
+];
 
 const costSlices = [
   { id: 'ui', label: 'UI + Prodotto', time: '2w', cost: '€6k', weight: 34 },
@@ -84,6 +97,31 @@ function FarmerIcon() {
   );
 }
 
+function SensorSetupIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <path d="M12 5v14" />
+      <path d="M8.5 8.5 12 5l3.5 3.5" />
+      <path d="M5.5 12a6.5 6.5 0 0 1 13 0" />
+      <circle cx="12" cy="18.2" r="1.8" />
+    </svg>
+  );
+}
+
+function CropTypeIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <path d="M12 4.8v14.4" />
+      <path d="M12 8c1.8 0 3.2-1.5 3.2-3.3C13.4 4.7 12 6.2 12 8Z" />
+      <path d="M12 10.9c1.7 0 3.1-1.4 3.1-3.1-1.7 0-3.1 1.4-3.1 3.1Z" />
+      <path d="M12 13.8c1.6 0 2.9-1.3 2.9-2.9-1.6 0-2.9 1.3-2.9 2.9Z" />
+      <path d="M12 9.3c-1.8 0-3.2-1.5-3.2-3.3 1.8 0 3.2 1.5 3.2 3.3Z" />
+      <path d="M12 12.2c-1.7 0-3.1-1.4-3.1-3.1 1.7 0 3.1 1.4 3.1 3.1Z" />
+      <path d="M12 15c-1.5 0-2.8-1.2-2.8-2.8 1.5 0 2.8 1.2 2.8 2.8Z" />
+    </svg>
+  );
+}
+
 function ArrowIcon({ direction }) {
   const transform = direction === 'back' ? 'rotate(180 12 12)' : undefined;
 
@@ -105,6 +143,7 @@ function RoadmapPresentation() {
     bridgePath: '',
     trunkPath: '',
     branchPaths: {},
+    farmerCenters: {},
   });
   const roadmapRef = useRef(null);
   const stageRef = useRef(null);
@@ -118,7 +157,10 @@ function RoadmapPresentation() {
   const showConsorzio = step >= 2;
   const showBridge = step >= 3;
   const showFarmers = step >= 4;
-  const showCosts = step >= 5;
+  const showProfileFocus = step >= 5 && step < 7;
+  const showIdentikit = step >= 6 && step < 7;
+  const showCosts = step >= 7;
+  const focusFarmerCenter = connectionLayout.farmerCenters[TOP_FARMER.id];
 
   useEffect(() => {
     roadmapRef.current?.focus();
@@ -148,6 +190,7 @@ function RoadmapPresentation() {
         bridgePath: '',
         trunkPath: '',
         branchPaths: {},
+        farmerCenters: {},
       };
 
       const companyCenter = getElementCenter(companyRef.current, stageRect);
@@ -175,6 +218,10 @@ function RoadmapPresentation() {
           .filter(Boolean);
 
         if (farmerCenters.length > 0) {
+          farmerCenters.forEach((node) => {
+            nextLayout.farmerCenters[node.id] = node.center;
+          });
+
           const averageFarmerX =
             farmerCenters.reduce((sum, node) => sum + node.center.x, 0) / farmerCenters.length;
           const branchHub = {
@@ -209,7 +256,8 @@ function RoadmapPresentation() {
           current.height === nextLayout.height &&
           current.bridgePath === nextLayout.bridgePath &&
           current.trunkPath === nextLayout.trunkPath &&
-          JSON.stringify(current.branchPaths) === JSON.stringify(nextLayout.branchPaths);
+          JSON.stringify(current.branchPaths) === JSON.stringify(nextLayout.branchPaths) &&
+          JSON.stringify(current.farmerCenters) === JSON.stringify(nextLayout.farmerCenters);
 
         return sameLayout ? current : nextLayout;
       });
@@ -280,7 +328,7 @@ function RoadmapPresentation() {
 
   return (
     <article
-      className={`roadmap-presentation roadmap-presentation--step-${step}`}
+      className={`roadmap-presentation roadmap-presentation--step-${step}${showProfileFocus ? ' roadmap-presentation--profile-focus' : ''}${showIdentikit ? ' roadmap-presentation--identikit' : ''}`}
       onClick={handleStageClick}
       onKeyDown={handleKeyDown}
       ref={roadmapRef}
@@ -308,7 +356,7 @@ function RoadmapPresentation() {
             <path className="roadmap-path roadmap-path--trunk" d={connectionLayout.trunkPath} pathLength="1" />
             {farmerNodes.map((node) => (
               <path
-                className="roadmap-path roadmap-path--branch"
+                className={`roadmap-path roadmap-path--branch${node.id === TOP_FARMER.id ? ' roadmap-path--focus-branch' : ''}`}
                 d={connectionLayout.branchPaths[node.id]}
                 key={`${node.id}-line`}
                 pathLength="1"
@@ -340,7 +388,7 @@ function RoadmapPresentation() {
           {farmerNodes.map((node, index) => (
             <li
               aria-label={`Agricoltore ${index + 1}`}
-              className="roadmap-node roadmap-node--farmer"
+              className={`roadmap-node roadmap-node--farmer${node.id === TOP_FARMER.id && showProfileFocus ? ' is-selected' : ''}`}
               key={node.id}
               ref={(element) => {
                 if (element) {
@@ -356,10 +404,51 @@ function RoadmapPresentation() {
                 '--node-y': node.y,
               }}
             >
-              <FarmerIcon />
+              <span className="roadmap-node__farmer-core">
+                <FarmerIcon />
+              </span>
             </li>
           ))}
         </ul>
+
+        {showIdentikit && focusFarmerCenter ? (
+          <div
+            aria-hidden="true"
+            className="roadmap-identikit"
+            style={{
+              '--identikit-origin-x': `${focusFarmerCenter.x}px`,
+              '--identikit-origin-y': `${focusFarmerCenter.y}px`,
+            }}
+          >
+            {identikitTokens.map((token) => (
+              <article
+                className={`roadmap-identikit__token roadmap-identikit__token--${token.id}`}
+                key={token.id}
+                style={{
+                  '--burst-x': `${token.offsetX}px`,
+                  '--burst-y': `${token.offsetY}px`,
+                  '--burst-delay': token.delay,
+                }}
+              >
+                <span className="roadmap-identikit__icon">
+                  {token.icon === 'sensor' ? <SensorSetupIcon /> : <CropTypeIcon />}
+                </span>
+                <span className="roadmap-identikit__copy">{token.label}</span>
+              </article>
+            ))}
+
+            <span
+              className="roadmap-identikit__caption"
+              style={{
+                '--burst-x': '62px',
+                '--burst-y': '54px',
+                '--burst-delay': '0.22s',
+              }}
+            >
+              Alert mirati
+            </span>
+          </div>
+        ) : null}
 
         {showCosts ? (
           <aside aria-label="Stima costi e tempi" className="roadmap-costs">

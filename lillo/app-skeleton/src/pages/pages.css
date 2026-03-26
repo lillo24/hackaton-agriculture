@@ -20,6 +20,29 @@
   height: 100%;
 }
 
+.mobile-app--phone .dashboard-priority-grid {
+  grid-template-columns: 1fr;
+  gap: 0.62rem;
+}
+
+.mobile-app--phone .dashboard-priority-grid .section-card {
+  height: auto;
+}
+
+.mobile-app--phone .dashboard-priority-grid__alerts {
+  order: 1;
+}
+
+.mobile-app--phone .dashboard-priority-grid__assistant {
+  order: 2;
+}
+
+.mobile-app--phone .dashboard-priority-grid__alerts .section-card__subtitle,
+.mobile-app--phone .dashboard-alert-focus__summary,
+.mobile-app--phone .dashboard-priority-grid__alerts .dashboard-severity-row {
+  display: none;
+}
+
 .dashboard-alert-focus {
   display: grid;
   gap: 0.55rem;
