@@ -24,11 +24,15 @@ function FarmVisualCard({
             <ul aria-label="Signals" className="farm-visual-card__signals">
               {signalBadges.map((signal) => (
                 <li
-                  className={`farm-visual-card__signal ${signal.connected ? 'is-connected' : 'is-broken'}`}
+                  className={`farm-visual-card__signal-item ${signal.connected ? 'is-connected' : 'is-broken'}`}
                   key={signal.id}
                   title={`${signal.label}: ${signal.connected ? 'connected' : 'broken'}`}
                 >
-                  {signal.icon}
+                  <span className="farm-visual-card__signal-icon">{signal.icon}</span>
+                  <span className="farm-visual-card__signal-copy">
+                    <strong>{signal.label}</strong>
+                    <small>{signal.statusLabel ?? (signal.connected ? 'Active' : 'Inactive')}</small>
+                  </span>
                 </li>
               ))}
             </ul>
@@ -59,7 +63,6 @@ function FarmVisualCard({
               </linearGradient>
             </defs>
 
-            <rect fill="#f4ecda" height="190" rx="22" width="320" />
             <polygon fill="#6c5135" points="50,95 160,152 160,184 50,127" />
             <polygon fill="#7a5c3d" points="160,152 270,95 270,127 160,184" />
             <polygon

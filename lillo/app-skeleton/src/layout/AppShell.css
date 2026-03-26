@@ -2,6 +2,10 @@
   --shell-padding-x: clamp(1rem, 3vw, 2.5rem);
   --shell-padding-bottom: clamp(1rem, 2.8vh, 1.75rem);
   --phone-available-height: calc(100dvh - 8.5rem);
+  --toggle-motion-duration: 0.58s;
+  --toggle-motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --toggle-button-duration: 0.34s;
+  --toggle-button-ease: cubic-bezier(0.24, 0.9, 0.32, 1);
   height: 100vh;
   height: 100dvh;
   display: grid;
@@ -23,8 +27,8 @@
   align-items: center;
   min-height: 2.6rem;
   transition:
-    justify-content 0.42s ease,
-    padding-inline 0.42s ease;
+    justify-content var(--toggle-motion-duration) var(--toggle-motion-ease),
+    padding-inline var(--toggle-motion-duration) var(--toggle-motion-ease);
 }
 
 .app-shell__top-toggle--roadmap {
@@ -50,15 +54,17 @@
   backdrop-filter: blur(14px);
   box-shadow: var(--shadow-soft);
   transform-origin: left center;
+  transform: translateY(0) scale(1);
   transition:
-    transform 0.42s cubic-bezier(0.2, 0.75, 0.25, 1),
-    background-color 0.3s ease,
-    border-color 0.3s ease,
-    box-shadow 0.3s ease;
+    transform var(--toggle-motion-duration) var(--toggle-motion-ease),
+    background-color 0.44s ease,
+    border-color 0.44s ease,
+    box-shadow 0.44s ease,
+    backdrop-filter 0.44s ease;
 }
 
 .app-shell__mode-toggle--roadmap {
-  transform: scale(0.86);
+  transform: translateY(1px) scale(0.86);
   border-color: rgba(38, 63, 46, 0.24);
   background: rgba(255, 255, 255, 0.84);
   box-shadow: 0 14px 34px rgba(35, 62, 42, 0.16);
@@ -80,20 +86,24 @@
   font-weight: 700;
   padding: 0.52rem 0.95rem;
   cursor: pointer;
+  transform: translateY(0) scale(1);
   transition:
-    color 0.2s ease,
-    background-color 0.2s ease,
-    box-shadow 0.2s ease;
+    color var(--toggle-button-duration) ease,
+    background-color var(--toggle-button-duration) ease,
+    box-shadow var(--toggle-button-duration) var(--toggle-button-ease),
+    transform var(--toggle-button-duration) var(--toggle-button-ease);
 }
 
 .app-shell__mode-toggle-button:hover {
   color: var(--ink);
+  transform: translateY(-1px);
 }
 
 .app-shell__mode-toggle-button.is-active {
   color: var(--ink);
   background: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 8px 18px rgba(32, 51, 37, 0.12);
+  box-shadow: 0 10px 22px rgba(32, 51, 37, 0.14);
+  transform: translateY(-1px) scale(1.01);
 }
 
 .app-shell__preview-stage {

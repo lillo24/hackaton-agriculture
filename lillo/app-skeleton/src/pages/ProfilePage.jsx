@@ -79,6 +79,7 @@ function ProfilePage({ selectedFarm, alerts, integrations }) {
     id: source.id,
     label: source.label,
     connected: isSourceConnected(source.status),
+    statusLabel: isSourceConnected(source.status) ? 'Active' : 'Inactive',
     icon: <SourceIcon type={source.type} />,
   }));
 

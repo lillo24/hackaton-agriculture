@@ -1,22 +1,33 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import './RoadmapPresentation.css';
 
 const TOTAL_STEPS = 6;
 
 const CONSORZIO_CENTER = { x: 50, y: 50 };
-const BRANCH_HUB = { x: 62, y: 50 };
 const FARMER_ARC_ANGLES = [-72, -46, -20, 20, 46, 72];
 const FARMER_ARC_RADIUS = { x: 30, y: 27 };
-const COMPANY_BRIDGE_PATH = 'M 31.2 53.2 C 35.8 54.1, 40.8 51.4, 45.4 50.2';
-const DISTRIBUTION_TRUNK_PATH = 'M 50 50 C 53.8 50.4, 57.1 49.8, 62 50';
+
+function formatPoint(value) {
+  return Number(value.toFixed(2));
+}
+
+function getElementCenter(element, stageRect) {
+  if (!element) {
+    return null;
+  }
+
+  const rect = element.getBoundingClientRect();
+
+  return {
+    x: formatPoint(rect.left - stageRect.left + rect.width / 2),
+    y: formatPoint(rect.top - stageRect.top + rect.height / 2),
+  };
+}
 
 const farmerNodes = FARMER_ARC_ANGLES.map((angle, index, angles) => {
   const radians = (angle * Math.PI) / 180;
   const x = CONSORZIO_CENTER.x + FARMER_ARC_RADIUS.x * Math.cos(radians);
   const y = CONSORZIO_CENTER.y + FARMER_ARC_RADIUS.y * Math.sin(radians);
-  const centerOffset = index - (angles.length - 1) / 2;
-  const controlX = (BRANCH_HUB.x + x) / 2 + 2.8;
-  const controlY = (BRANCH_HUB.y + y) / 2 + centerOffset * 1.6;
 
   return {
     id: `farmer-${String(index + 1).padStart(2, '0')}`,
@@ -24,7 +35,7 @@ const farmerNodes = FARMER_ARC_ANGLES.map((angle, index, angles) => {
     y: `${y.toFixed(2)}%`,
     delay: `${(0.08 + index * 0.07).toFixed(2)}s`,
     branchDelay: `${(0.42 + index * 0.11).toFixed(2)}s`,
-    branchPath: `M ${BRANCH_HUB.x} ${BRANCH_HUB.y} Q ${controlX.toFixed(2)} ${controlY.toFixed(2)} ${x.toFixed(2)} ${y.toFixed(2)}`,
+    order: index - (angles.length - 1) / 2,
   };
 });
 
@@ -38,12 +49,14 @@ const costSlices = [
 function CompanyIcon() {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24">
-      <rect height="13" rx="2.8" width="18" x="3" y="6" />
-      <path d="M8 4h8" />
-      <path d="M8 10h8" />
-      <circle cx="8" cy="16" r="1.2" />
-      <circle cx="12" cy="16" r="1.2" />
-      <circle cx="16" cy="16" r="1.2" />
+      <path d="M3.8 19.5h16.4" />
+      <path d="M6.2 19.5V8.4a1.2 1.2 0 0 1 1.2-1.2h4.2a1.2 1.2 0 0 1 1.2 1.2v11.1" />
+      <path d="M12.8 19.5V11.2a1.2 1.2 0 0 1 1.2-1.2h2.6a1.2 1.2 0 0 1 1.2 1.2v8.3" />
+      <path d="M8.6 10.4h1.8" />
+      <path d="M8.6 13.3h1.8" />
+      <path d="M15.1 13.2h1.1" />
+      <path d="M15.1 15.9h1.1" />
+      <path d="M9.5 19.5v-3.2" />
     </svg>
   );
 }
@@ -86,7 +99,18 @@ function ArrowIcon({ direction }) {
 
 function RoadmapPresentation() {
   const [step, setStep] = useState(0);
+  const [connectionLayout, setConnectionLayout] = useState({
+    width: 0,
+    height: 0,
+    bridgePath: '',
+    trunkPath: '',
+    branchPaths: {},
+  });
   const roadmapRef = useRef(null);
+  const stageRef = useRef(null);
+  const companyRef = useRef(null);
+  const consorzioRef = useRef(null);
+  const farmerRefs = useRef({});
   const lastStep = TOTAL_STEPS - 1;
   const canGoBack = step > 0;
   const canAdvance = step < lastStep;
@@ -99,6 +123,127 @@ function RoadmapPresentation() {
   useEffect(() => {
     roadmapRef.current?.focus();
   }, []);
+
+  useLayoutEffect(() => {
+    const stageElement = stageRef.current;
+
+    if (!stageElement) {
+      return undefined;
+    }
+
+    let frameId = 0;
+
+    const measureConnections = () => {
+      const stageRect = stageElement.getBoundingClientRect();
+
+      if (!stageRect.width || !stageRect.height) {
+        return;
+      }
+
+      const width = formatPoint(stageRect.width);
+      const height = formatPoint(stageRect.height);
+      const nextLayout = {
+        width,
+        height,
+        bridgePath: '',
+        trunkPath: '',
+        branchPaths: {},
+      };
+
+      const companyCenter = getElementCenter(companyRef.current, stageRect);
+      const consorzioCenter = getElementCenter(consorzioRef.current, stageRect);
+
+      if (showBridge && companyCenter && consorzioCenter) {
+        const bridgeDistance = consorzioCenter.x - companyCenter.x;
+        const bridgeLift = Math.min(Math.max(height * 0.022, 10), 18);
+
+        nextLayout.bridgePath = [
+          `M ${companyCenter.x} ${companyCenter.y}`,
+          `C ${formatPoint(companyCenter.x + bridgeDistance * 0.34)} ${formatPoint(companyCenter.y + bridgeLift * 0.42)},`,
+          `${formatPoint(companyCenter.x + bridgeDistance * 0.74)} ${formatPoint(consorzioCenter.y - bridgeLift * 0.28)},`,
+          `${consorzioCenter.x} ${consorzioCenter.y}`,
+        ].join(' ');
+      }
+
+      if (showFarmers && consorzioCenter) {
+        const farmerCenters = farmerNodes
+          .map((node) => {
+            const element = farmerRefs.current[node.id];
+            const center = getElementCenter(element, stageRect);
+            return center ? { id: node.id, center, order: node.order } : null;
+          })
+          .filter(Boolean);
+
+        if (farmerCenters.length > 0) {
+          const averageFarmerX =
+            farmerCenters.reduce((sum, node) => sum + node.center.x, 0) / farmerCenters.length;
+          const branchHub = {
+            x: formatPoint(consorzioCenter.x + (averageFarmerX - consorzioCenter.x) * 0.34),
+            y: consorzioCenter.y,
+          };
+          const trunkDistance = branchHub.x - consorzioCenter.x;
+          const trunkLift = Math.min(Math.max(height * 0.012, 4), 10);
+          const branchSpread = Math.min(Math.max(height * 0.012, 6), 12);
+
+          nextLayout.trunkPath = [
+            `M ${consorzioCenter.x} ${consorzioCenter.y}`,
+            `C ${formatPoint(consorzioCenter.x + trunkDistance * 0.42)} ${formatPoint(consorzioCenter.y + trunkLift * 0.36)},`,
+            `${formatPoint(consorzioCenter.x + trunkDistance * 0.78)} ${formatPoint(branchHub.y - trunkLift * 0.22)},`,
+            `${branchHub.x} ${branchHub.y}`,
+          ].join(' ');
+
+          farmerCenters.forEach((node) => {
+            const controlX = formatPoint(branchHub.x + (node.center.x - branchHub.x) * 0.56);
+            const controlY = formatPoint(
+              branchHub.y + (node.center.y - branchHub.y) * 0.48 + node.order * branchSpread,
+            );
+
+            nextLayout.branchPaths[node.id] = `M ${branchHub.x} ${branchHub.y} Q ${controlX} ${controlY} ${node.center.x} ${node.center.y}`;
+          });
+        }
+      }
+
+      setConnectionLayout((current) => {
+        const sameLayout =
+          current.width === nextLayout.width &&
+          current.height === nextLayout.height &&
+          current.bridgePath === nextLayout.bridgePath &&
+          current.trunkPath === nextLayout.trunkPath &&
+          JSON.stringify(current.branchPaths) === JSON.stringify(nextLayout.branchPaths);
+
+        return sameLayout ? current : nextLayout;
+      });
+    };
+
+    const scheduleMeasure = () => {
+      cancelAnimationFrame(frameId);
+      frameId = requestAnimationFrame(measureConnections);
+    };
+
+    const resizeObserver = new ResizeObserver(scheduleMeasure);
+    resizeObserver.observe(stageElement);
+
+    if (companyRef.current) {
+      resizeObserver.observe(companyRef.current);
+    }
+
+    if (consorzioRef.current) {
+      resizeObserver.observe(consorzioRef.current);
+    }
+
+    Object.values(farmerRefs.current).forEach((element) => {
+      if (element) {
+        resizeObserver.observe(element);
+      }
+    });
+
+    scheduleMeasure();
+
+    return () => {
+      cancelAnimationFrame(frameId);
+      resizeObserver.disconnect();
+    };
+  }, [showBridge, showFarmers, showCompany, showConsorzio, step]);
 
   const advanceStep = () => {
     if (canAdvance) {
@@ -141,24 +286,30 @@ function RoadmapPresentation() {
       ref={roadmapRef}
       tabIndex={0}
     >
-      <section aria-label="Roadmap canvas" className="roadmap-stage" role="presentation">
-        {showBridge ? (
-          <svg aria-hidden="true" className="roadmap-connection-layer roadmap-connection-layer--bridge" viewBox="0 0 100 100">
-            <path className="roadmap-path roadmap-path--bridge" d={COMPANY_BRIDGE_PATH} pathLength="1" />
+      <section aria-label="Roadmap canvas" className="roadmap-stage" ref={stageRef} role="presentation">
+        {showBridge && connectionLayout.bridgePath ? (
+          <svg
+            aria-hidden="true"
+            className="roadmap-connection-layer roadmap-connection-layer--bridge"
+            preserveAspectRatio="none"
+            viewBox={`0 0 ${connectionLayout.width} ${connectionLayout.height}`}
+          >
+            <path className="roadmap-path roadmap-path--bridge" d={connectionLayout.bridgePath} pathLength="1" />
           </svg>
         ) : null}
 
-        {showFarmers ? (
+        {showFarmers && connectionLayout.trunkPath ? (
           <svg
             aria-hidden="true"
             className="roadmap-connection-layer roadmap-connection-layer--distribution"
-            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+            viewBox={`0 0 ${connectionLayout.width} ${connectionLayout.height}`}
           >
-            <path className="roadmap-path roadmap-path--trunk" d={DISTRIBUTION_TRUNK_PATH} pathLength="1" />
+            <path className="roadmap-path roadmap-path--trunk" d={connectionLayout.trunkPath} pathLength="1" />
             {farmerNodes.map((node) => (
               <path
                 className="roadmap-path roadmap-path--branch"
-                d={node.branchPath}
+                d={connectionLayout.branchPaths[node.id]}
                 key={`${node.id}-line`}
                 pathLength="1"
                 style={{ '--path-delay': node.branchDelay }}
@@ -168,16 +319,16 @@ function RoadmapPresentation() {
         ) : null}
 
         {showCompany ? (
-          <article className="roadmap-node roadmap-node--company">
+          <article className="roadmap-node roadmap-node--company" ref={companyRef}>
             <span className="roadmap-node__icon">
               <CompanyIcon />
             </span>
-            <span className="roadmap-node__label">Company / Platform</span>
+            <span className="roadmap-node__label">Start-Up</span>
           </article>
         ) : null}
 
         {showConsorzio ? (
-          <article className={`roadmap-node roadmap-node--consorzio${showFarmers ? ' is-distributing' : ''}`}>
+          <article className={`roadmap-node roadmap-node--consorzio${showFarmers ? ' is-distributing' : ''}`} ref={consorzioRef}>
             <span className="roadmap-node__icon">
               <ConsorzioIcon />
             </span>
@@ -191,6 +342,14 @@ function RoadmapPresentation() {
               aria-label={`Agricoltore ${index + 1}`}
               className="roadmap-node roadmap-node--farmer"
               key={node.id}
+              ref={(element) => {
+                if (element) {
+                  farmerRefs.current[node.id] = element;
+                  return;
+                }
+
+                delete farmerRefs.current[node.id];
+              }}
               style={{
                 '--node-delay': node.delay,
                 '--node-x': node.x,

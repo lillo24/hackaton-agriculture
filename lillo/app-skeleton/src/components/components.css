@@ -294,32 +294,55 @@
 
 .farm-visual-card__signals {
   position: absolute;
-  top: 0.2rem;
-  right: 0.35rem;
+  inset: 0;
   z-index: 3;
   list-style: none;
   margin: 0;
   padding: 0;
-  display: flex;
-  align-items: center;
-  gap: 0.38rem;
+  pointer-events: none;
 }
 
-.farm-visual-card__signal {
-  width: 34px;
-  height: 34px;
-  border-radius: 11px;
-  border: 1px solid rgba(63, 110, 78, 0.2);
+.farm-visual-card__signal-item {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.44rem;
+  padding: 0.28rem 0.4rem;
+  border-radius: 12px;
+  border: 1px solid rgba(63, 110, 78, 0.18);
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 9px 16px rgba(45, 70, 55, 0.13);
+}
+
+.farm-visual-card__signal-item:nth-child(1) {
+  top: 0.25rem;
+  left: 0.25rem;
+}
+
+.farm-visual-card__signal-item:nth-child(2) {
+  top: 0.25rem;
+  right: 0.25rem;
+}
+
+.farm-visual-card__signal-item:nth-child(3) {
+  right: 0.38rem;
+  bottom: 0.22rem;
+}
+
+.farm-visual-card__signal-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
   display: grid;
   place-items: center;
-  background: rgba(255, 255, 255, 0.86);
-  color: #2d8a58;
-  box-shadow: 0 7px 12px rgba(45, 70, 55, 0.12);
+  color: #ffffff;
+  background: #2d8a58;
+  box-shadow: 0 0 0 2px rgba(45, 138, 88, 0.18);
 }
 
-.farm-visual-card__signal svg {
-  width: 16px;
-  height: 16px;
+.farm-visual-card__signal-icon svg {
+  width: 15px;
+  height: 15px;
   stroke: currentColor;
   stroke-width: 1.8;
   stroke-linecap: round;
@@ -327,12 +350,25 @@
   fill: none;
 }
 
-.farm-visual-card__signal.is-connected {
-  color: #2d8a58;
+.farm-visual-card__signal-copy strong {
+  display: block;
+  color: var(--ink);
+  font-size: 0.74rem;
+  line-height: 1.25;
 }
 
-.farm-visual-card__signal.is-broken {
-  color: #bf5a4f;
+.farm-visual-card__signal-copy small {
+  display: block;
+  margin-top: 0.1rem;
+  color: var(--muted);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.farm-visual-card__signal-item.is-broken .farm-visual-card__signal-icon {
+  background: #bf5a4f;
+  box-shadow: 0 0 0 2px rgba(191, 90, 79, 0.18);
 }
 
 .farm-visual-card__scene {
@@ -775,15 +811,36 @@
     padding: 1rem 0.2rem;
   }
 
-  .farm-visual-card__signals {
-    top: 0.16rem;
-    right: 0.22rem;
-    gap: 0.3rem;
+  .farm-visual-card__signal-item {
+    padding: 0.25rem 0.34rem;
   }
 
-  .farm-visual-card__signal {
-    width: 31px;
-    height: 31px;
+  .farm-visual-card__signal-item:nth-child(1),
+  .farm-visual-card__signal-item:nth-child(2),
+  .farm-visual-card__signal-item:nth-child(3) {
+    position: static;
+    margin-top: 0.25rem;
+  }
+
+  .farm-visual-card__signals {
+    position: static;
+    display: grid;
+    gap: 0.24rem;
+    margin-bottom: 0.4rem;
+    pointer-events: auto;
+  }
+
+  .farm-visual-card__signal-icon {
+    width: 27px;
+    height: 27px;
+  }
+
+  .farm-visual-card__signal-copy strong {
+    font-size: 0.7rem;
+  }
+
+  .farm-visual-card__signal-copy small {
+    font-size: 0.58rem;
   }
 
   .farm-visual-card__pill {

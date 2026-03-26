@@ -41,8 +41,8 @@
 }
 
 .roadmap-node__icon {
-  width: 26px;
-  height: 26px;
+  width: clamp(32px, 2vw, 40px);
+  height: clamp(32px, 2vw, 40px);
   color: #325943;
 }
 
@@ -58,7 +58,7 @@
 
 .roadmap-node__label {
   color: var(--roadmap-muted);
-  font-size: 0.64rem;
+  font-size: 0.68rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   font-weight: 700;
@@ -67,18 +67,18 @@
 .roadmap-node--company {
   left: 22%;
   top: 53%;
-  width: clamp(140px, 20vw, 192px);
-  padding: 0.58rem 0.62rem;
+  width: clamp(168px, 18vw, 236px);
+  padding: 0.72rem 0.82rem;
   animation:
     roadmap-company-enter 0.95s cubic-bezier(0.18, 0.82, 0.3, 1) both,
     roadmap-node-float 4.8s ease-in-out 1.05s infinite;
 }
 
 .roadmap-node--consorzio {
-  left: 50%;
+  left: 47.5%;
   top: 50%;
-  width: clamp(132px, 18vw, 174px);
-  padding: 0.62rem 0.66rem;
+  width: clamp(156px, 16vw, 214px);
+  padding: 0.76rem 0.86rem;
   border-color: rgba(49, 86, 61, 0.28);
   background:
     radial-gradient(circle at 50% 0%, rgba(153, 206, 126, 0.18), transparent 55%),
@@ -163,7 +163,7 @@
 .roadmap-node--farmer {
   left: var(--node-x, 72%);
   top: var(--node-y, 22%);
-  width: clamp(38px, 4.6vw, 52px);
+  width: clamp(50px, 4.9vw, 68px);
   aspect-ratio: 1;
   border-radius: 999px;
   border-color: rgba(48, 75, 52, 0.18);
@@ -182,10 +182,10 @@
 .roadmap-node--farmer::before {
   content: '';
   position: absolute;
-  right: 10px;
-  bottom: 6px;
+  right: 14px;
+  bottom: 9px;
   width: 2px;
-  height: 8px;
+  height: 10px;
   border-radius: 999px;
   background: rgba(88, 133, 75, 0.82);
   transform: rotate(-20deg);
@@ -194,10 +194,10 @@
 .roadmap-node--farmer::after {
   content: '';
   position: absolute;
-  right: 5px;
-  bottom: 8px;
-  width: 9px;
-  height: 9px;
+  right: 8px;
+  bottom: 10px;
+  width: 11px;
+  height: 11px;
   border-radius: 90% 0 90% 90%;
   background: linear-gradient(180deg, rgba(147, 190, 100, 0.96), rgba(92, 138, 78, 0.94));
   box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.96);
@@ -205,8 +205,8 @@
 }
 
 .roadmap-node--farmer svg {
-  width: 21px;
-  height: 21px;
+  width: 28px;
+  height: 28px;
   color: #355941;
   fill: none;
   stroke: currentColor;
@@ -543,19 +543,29 @@
 }
 
 @media (max-width: 840px) {
+  .roadmap-node__icon {
+    width: 30px;
+    height: 30px;
+  }
+
   .roadmap-node--company {
     left: 26%;
     top: 56%;
-    width: 142px;
+    width: 156px;
   }
 
   .roadmap-node--consorzio {
-    left: 50%;
-    width: 134px;
+    left: 48%;
+    width: 146px;
   }
 
   .roadmap-node--farmer {
-    width: 42px;
+    width: 48px;
+  }
+
+  .roadmap-node--farmer svg {
+    width: 24px;
+    height: 24px;
   }
 
   .roadmap-costs {
@@ -575,17 +585,28 @@
 }
 
 @media (max-width: 620px) {
+  .roadmap-node__icon {
+    width: 28px;
+    height: 28px;
+  }
+
   .roadmap-node--company {
     left: 28%;
-    width: 126px;
+    width: 138px;
   }
 
   .roadmap-node--consorzio {
-    width: 120px;
+    left: 49%;
+    width: 130px;
   }
 
   .roadmap-node--farmer {
-    width: 38px;
+    width: 42px;
+  }
+
+  .roadmap-node--farmer svg {
+    width: 22px;
+    height: 22px;
   }
 
   .roadmap-costs {
