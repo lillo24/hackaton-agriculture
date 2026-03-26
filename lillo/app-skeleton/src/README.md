@@ -5,11 +5,11 @@ Status: `DRAFT` because the source tree is stable enough to demo, but the interf
 Files and folders
 - `README.md` - folder map for the source tree.
 - `main.jsx` - browser bootstrap that mounts the React app inside `BrowserRouter`.
-- `App.jsx` - top-level route wiring, selected-farm state owner, and farm-switch loading placeholder trigger.
+- `App.jsx` - top-level route wiring, fixed profile context selection, and app-level selected-alert state owner.
 - `index.css` - global theme tokens, background system, and shared browser resets.
 - `components/` - reusable visual building blocks such as badges, cards, and the phone frame.
 - `layout/` - desktop stage plus mobile-app shell that wraps routed page content.
-- `pages/` - route-level screens for farm selection, alerts, and alert detail.
+- `pages/` - route-level screens for dashboard placeholder, profile context, alerts list, and dedicated alert detail.
 - `data/` - centralized shared entities plus selectors for farm-aware alert derivation and in-detail provenance rendering.
 
 Why these live together
@@ -17,4 +17,6 @@ Why these live together
 - The rest of the folders divide responsibility by reuse level: global bootstrapping, reusable UI pieces, shell layout, route screens, and mock domain data.
 
 Non-obvious behavior
-- The app intentionally exposes only the profile -> alerts -> alert detail flow; unknown routes are redirected to `/farm-type`.
+- The app home route now resolves to `/dashboard`, which is intentionally a minimal placeholder for the future daily farmer dashboard.
+- Selected alert state is stored in `App.jsx`; `/alert` reads that state and renders an empty quiet placeholder when no alert has been selected yet.
+- Legacy `/alerts/:alertId` links are supported by redirecting to `/alert` while synchronizing selected-alert state.

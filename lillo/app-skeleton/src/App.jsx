@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useParams } from 'react-router-dom';
 import './components/components.css';
 import './pages/pages.css';
 import { alertSources, alertTemplates, farmTypes, fields, integrations } from './data/mockData';
@@ -7,53 +7,85 @@ import { buildAlertsForFarm } from './data/selectors';
 import AppShell from './layout/AppShell';
 import AlertDetailPage from './pages/AlertDetailPage';
 import AlertsPage from './pages/AlertsPage';
-import FarmTypePage from './pages/FarmTypePage';
+import DashboardPage from './pages/DashboardPage';
+import ProfilePage from './pages/ProfilePage';
 
-const PROFILE_SWITCH_LOADING_MS = 300;
+const DEFAULT_FARM_ID = farmTypes[0].id;
 
-function App() {
-  const [selectedFarmId, setSelectedFarmId] = useState(farmTypes[0].id);
-  const [isProfileLoading, setIsProfileLoading] = useState(true);
-  const selectedFarm = farmTypes.find((farm) => farm.id === selectedFarmId);
-
-  if (!selectedFarm) {
-    throw new Error(`Farm selection "${selectedFarmId}" is not supported by the mock data set.`);
-  }
+function LegacyAlertRoute({ alerts, onSelectAlert }) {
+  const { alertId } = useParams();
+  const hasAlert = alerts.some((alert) => alert.id === alertId);
 
   useEffect(() => {
-    // Small delay keeps state transitions demo-friendly and enables lightweight loading placeholders.
-    setIsProfileLoading(true);
-    const timeoutId = window.setTimeout(() => setIsProfileLoading(false), PROFILE_SWITCH_LOADING_MS);
+    onSelectAlert(hasAlert ? alertId : null);
+  }, [alertId, hasAlert, onSelectAlert]);
 
-    return () => window.clearTimeout(timeoutId);
-  }, [selectedFarmId]);
+  return <Navigate replace state={hasAlert ? { from: '/alerts', focusAlertId: alertId } : { from: '/alerts' }} to="/alert" />;
+}
+
+function App() {
+  const [selectedAlertId, setSelectedAlertId] = useState(null);
+  const selectedFarm = farmTypes.find((farm) => farm.id === DEFAULT_FARM_ID);
+
+  if (!selectedFarm) {
+    throw new Error(`Farm selection "${DEFAULT_FARM_ID}" is not supported by the mock data set.`);
+  }
 
   const alerts = useMemo(
-    () => buildAlertsForFarm({ farmId: selectedFarmId, templates: alertTemplates, availableFields: fields, availableSources: alertSources, availableIntegrations: integrations }),
-    [selectedFarmId],
+    () =>
+      buildAlertsForFarm({
+        farmId: DEFAULT_FARM_ID,
+        templates: alertTemplates,
+        availableFields: fields,
+        availableSources: alertSources,
+        availableIntegrations: integrations,
+      }),
+    [],
   );
+  const selectedAlert = useMemo(
+    () => alerts.find((alert) => alert.id === selectedAlertId) ?? null,
+    [alerts, selectedAlertId],
+  );
+
+  useEffect(() => {
+    if (!selectedAlertId) {
+      return;
+    }
+
+    const hasSelectedAlert = alerts.some((alert) => alert.id === selectedAlertId);
+
+    if (!hasSelectedAlert) {
+      setSelectedAlertId(null);
+    }
+  }, [alerts, selectedAlertId]);
 
   return (
     <Routes>
       <Route element={<AppShell selectedFarm={selectedFarm} alerts={alerts} />}>
-        <Route path="/" element={<Navigate to="/farm-type" replace />} />
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/dashboard" element={<DashboardPage selectedFarm={selectedFarm} />} />
         <Route
-          path="/farm-type"
+          path="/alerts"
           element={
-            <FarmTypePage
-              farmTypes={farmTypes}
-              selectedFarmId={selectedFarmId}
-              onSelectFarm={setSelectedFarmId}
+            <AlertsPage
+              selectedFarm={selectedFarm}
               alerts={alerts}
+              selectedAlertId={selectedAlertId}
+              onSelectAlert={setSelectedAlertId}
             />
           }
         />
-        <Route path="/alerts" element={<AlertsPage selectedFarm={selectedFarm} alerts={alerts} isLoading={isProfileLoading} />} />
+        <Route path="/alert" element={<AlertDetailPage selectedFarm={selectedFarm} alert={selectedAlert} />} />
+        <Route path="/alerts/:alertId" element={<LegacyAlertRoute alerts={alerts} onSelectAlert={setSelectedAlertId} />} />
         <Route
-          path="/alerts/:alertId"
-          element={<AlertDetailPage selectedFarm={selectedFarm} alerts={alerts} isLoading={isProfileLoading} />}
+          path="/profile"
+          element={<ProfilePage selectedFarm={selectedFarm} alerts={alerts} integrations={integrations} />}
         />
-        <Route path="*" element={<Navigate to="/farm-type" replace />} />
+        <Route
+          path="/farm-type"
+          element={<Navigate replace to="/profile" />}
+        />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Route>
     </Routes>
   );

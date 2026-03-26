@@ -1,4 +1,4 @@
-import { Link, useLocation, useParams } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import PageHeader from '../components/PageHeader';
 import SectionCard from '../components/SectionCard';
 import StatusBadge from '../components/StatusBadge';
@@ -19,39 +19,22 @@ function compactCopy(text, maxLength = 96) {
   return `${normalized.slice(0, maxLength - 3).trimEnd()}...`;
 }
 
-function AlertDetailPage({ selectedFarm, alerts, isLoading = false }) {
-  const { alertId } = useParams();
+function AlertDetailPage({ selectedFarm, alert }) {
   const location = useLocation();
   const backTarget = location.state?.from ?? '/alerts';
-  const fallbackFocusAlertId = location.state?.focusAlertId ?? null;
-  const alert = alerts.find((currentAlert) => currentAlert.id === alertId);
-  const backState = { focusAlertId: alert?.id ?? fallbackFocusAlertId };
-
-  if (isLoading) {
-    return (
-      <div className="page">
-        <PageHeader
-          eyebrow="Alert Detail"
-          title="Loading alert detail"
-          description="Preparing source signals, integrated explanation, and the next-step recommendation."
-        />
-        <div className="skeleton-card" />
-        <div className="skeleton-card" />
-      </div>
-    );
-  }
+  const backState = alert?.id ? { focusAlertId: alert.id } : undefined;
 
   if (!alert) {
     return (
       <div className="page">
         <PageHeader
-          eyebrow="Alert Detail"
-          title="Alert unavailable"
-          description={`No alert named "${alertId}" exists in the ${selectedFarm.label} profile.`}
+          eyebrow="Alert"
+          title="No alert selected yet"
+          description="Open an alert from the Alerts page to inspect source signals and recommended action."
         />
-        <SectionCard subtitle="The route is valid, but this farm profile does not expose that alert id." title="Next step">
-          <Link className="inline-link" state={backState} to={backTarget}>
-            Return to alerts
+        <SectionCard subtitle="This page is reserved for one selected alert detail view." title="Quiet placeholder">
+          <Link className="inline-link" state={backState} to="/alerts">
+            Open alerts list
           </Link>
         </SectionCard>
       </div>

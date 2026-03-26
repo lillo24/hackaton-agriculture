@@ -9,7 +9,7 @@ Files
 - `PageHeader.jsx` - consistent title block used by route screens.
 - `SectionCard.jsx` - shared card wrapper for grouped page content.
 - `StatusBadge.jsx` - tone-aware pill for severities, statuses, and metadata tags.
-- `AlertListItem.jsx` - reusable prioritized alert card with field/source metadata and detail-link context preservation.
+- `AlertListItem.jsx` - reusable prioritized alert card with field/source metadata that opens the dedicated `/alert` route while preserving list return context and focus id.
 - `components.css` - shared styling rules for the reusable components above.
 
 Why these live together

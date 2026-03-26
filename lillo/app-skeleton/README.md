@@ -15,5 +15,7 @@ Why these live together
 - The app stays isolated under `lillo/` so the donor repo remains a read-only reference.
 
 Non-obvious behavior
-- The app defaults to the `Vineyard` profile on first load so every route has meaningful mock content before a manual selection is made.
+- The app loads with a fixed `Vineyard` profile context (simulating externally fetched profile data) and no profile-selection route in the main navigation.
+- The home route redirects to `/dashboard`, which is intentionally an empty placeholder for the future daily farmer dashboard.
+- The dedicated `/alert` route renders from app-level selected-alert state and shows a quiet empty state when opened without selecting an alert first.
 - The `PhoneFrame` is the primary preview container; the desktop text column is supporting presentation context only.

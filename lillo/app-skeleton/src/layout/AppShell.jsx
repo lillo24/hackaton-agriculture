@@ -4,8 +4,10 @@ import PhoneFrame from '../components/PhoneFrame';
 import './AppShell.css';
 
 const navItems = [
-  { to: '/farm-type', label: 'Profile', end: true },
-  { to: '/alerts', label: 'Alerts' },
+  { to: '/dashboard', label: 'Dashboard', icon: 'dashboard', end: true },
+  { to: '/alerts', label: 'Alerts', icon: 'alerts', end: true },
+  { to: '/alert', label: 'Alert', icon: 'alert', end: true },
+  { to: '/profile', label: 'Profile', icon: 'profile', end: true },
 ];
 
 const previewModes = [
@@ -13,13 +15,52 @@ const previewModes = [
   { id: 'desktop', label: 'Desktop' },
 ];
 
+function NavIcon({ icon }) {
+  if (icon === 'dashboard') {
+    return (
+      <svg aria-hidden="true" className="mobile-app__nav-icon" viewBox="0 0 24 24">
+        <rect height="7" rx="2" width="7" x="3" y="3" />
+        <rect height="7" rx="2" width="11" x="10" y="3" />
+        <rect height="11" rx="2" width="7" x="3" y="10" />
+        <rect height="11" rx="2" width="11" x="10" y="10" />
+      </svg>
+    );
+  }
+
+  if (icon === 'alerts') {
+    return (
+      <svg aria-hidden="true" className="mobile-app__nav-icon" viewBox="0 0 24 24">
+        <path d="M4 7.5h16" />
+        <path d="M4 12h11" />
+        <path d="M4 16.5h14" />
+      </svg>
+    );
+  }
+
+  if (icon === 'alert') {
+    return (
+      <svg aria-hidden="true" className="mobile-app__nav-icon" viewBox="0 0 24 24">
+        <path d="M12 4a4.5 4.5 0 0 0-4.5 4.5V11c0 .8-.3 1.6-.8 2.2L5.3 15c-.4.5 0 1.2.6 1.2h12.2c.6 0 1-.7.6-1.2l-1.4-1.8a3.6 3.6 0 0 1-.8-2.2V8.5A4.5 4.5 0 0 0 12 4Z" />
+        <path d="M10.4 18.2a1.8 1.8 0 0 0 3.2 0" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg aria-hidden="true" className="mobile-app__nav-icon" viewBox="0 0 24 24">
+      <circle cx="12" cy="8" r="3.2" />
+      <path d="M6.8 18a5.2 5.2 0 0 1 10.4 0" />
+    </svg>
+  );
+}
+
 function PreviewApp({ alerts, previewMode, selectedFarm }) {
   return (
     <div className={`mobile-app mobile-app--${previewMode}`}>
       <header className="mobile-app__topbar">
         <div>
           <p className="mobile-app__brand">AgriSentinel</p>
-          <p className="mobile-app__context">{selectedFarm.label} alert workflow</p>
+          <p className="mobile-app__context">{selectedFarm.label} context</p>
         </div>
         <div className="mobile-app__status-ring">
           <strong>{alerts.length}</strong>
@@ -39,7 +80,8 @@ function PreviewApp({ alerts, previewMode, selectedFarm }) {
             key={item.to}
             to={item.to}
           >
-            {item.label}
+            <NavIcon icon={item.icon} />
+            <span className="mobile-app__nav-label">{item.label}</span>
           </NavLink>
         ))}
       </nav>

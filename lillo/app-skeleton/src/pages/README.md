@@ -1,20 +1,22 @@
 # Pages Map
 
-Status: `DRAFT` because pages are wired to a coherent shared model, but interaction details can still evolve during demo iteration.
+Status: `DRAFT` because the dashboard/profile/alert route refactor is complete, but visual QA still relies on manual checks.
 
 Files
-- `README.md` - folder map for route-level screens.
-- `FarmTypePage.jsx` - route for selecting the active farm profile that shapes the rest of the mock app.
-- `AlertsPage.jsx` - route that renders the ranked alerts feed with lightweight URL-backed filters, grouped operational sections, and polished empty/loading states.
-- `AlertDetailPage.jsx` - route that renders one selected alert as a concise flow: source cards, one integrated explanation, and one recommended farmer action with preserved back-navigation context.
-- `pages.css` - page-level layout and route-specific styling shared by the files above.
+- `README.md` (`STABLE`) - folder map for route-level screens and behavior notes.
+- `DashboardPage.jsx` (`DRAFT`) - home placeholder route for the future farmer dashboard with intentionally minimal content.
+- `ProfilePage.jsx` (`DRAFT`) - simplified read-only profile context view (role, farm identity, connected sources, field context, operating focus).
+- `AlertsPage.jsx` (`DRAFT`) - ranked alerts list with URL-backed filters and click-to-select behavior for the dedicated alert detail route.
+- `AlertDetailPage.jsx` (`DRAFT`) - dedicated `/alert` detail destination that renders the app-selected alert or a quiet empty state when nothing is selected.
+- `FarmTypePage.jsx` (`FROZEN`) - previous profile-selection screen kept as legacy reference; no longer in active routing.
+- `pages.css` (`DRAFT`) - page-level layout and route-specific styling for the active page modules above.
 
 Why these live together
-- These files are route owners rather than reusable primitives.
-- Their shared CSS keeps route-specific layout rules away from the app shell and reusable component styles.
+- These files own route-level screens, not reusable primitives.
+- Shared page CSS keeps route-specific layout rules separate from shell and component-level styles.
 
 Non-obvious behavior
 - `AlertsPage` ranking uses weighted urgency: severity, farm relevance, status urgency, then recency as tie influence.
-- Alert filters are URL-backed (`severity`, `status`, `source`, `relevance`) so context survives drill-down and back navigation.
-- `AlertDetailPage` keeps detail lightweight by compacting source copy into short signal and relevance notes, then visualizes `signals -> interpretation -> action`.
-- `AlertDetailPage` back links preserve list route and focused alert context via router state (`from`, `focusAlertId`).
+- Alert filters are URL-backed (`severity`, `status`, `source`, `relevance`) so list context survives navigation.
+- `AlertsPage` sets app-level selected alert state when a user opens any alert from the list or priority card.
+- `AlertDetailPage` reads only that selected-alert state and intentionally shows a quiet empty placeholder if nothing is selected yet.

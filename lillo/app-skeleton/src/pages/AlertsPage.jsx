@@ -93,10 +93,16 @@ function AlertsLoadingState() {
   );
 }
 
-function AlertsPage({ selectedFarm, alerts, isLoading = false }) {
+function AlertsPage({
+  selectedFarm,
+  alerts,
+  isLoading = false,
+  selectedAlertId = null,
+  onSelectAlert,
+}) {
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
-  const focusedAlertId = location.state?.focusAlertId ?? null;
+  const focusedAlertId = location.state?.focusAlertId ?? selectedAlertId;
   const rankedAlerts = useMemo(() => rankAlerts(alerts), [alerts]);
   const sourceOptions = useMemo(() => {
     const sourceMap = new Map();
@@ -180,6 +186,10 @@ function AlertsPage({ selectedFarm, alerts, isLoading = false }) {
     setSearchParams({}, { replace: true });
   }
 
+  function handleOpenAlert(alertId) {
+    onSelectAlert?.(alertId);
+  }
+
   function renderAlertGroup({ title, subtitle, alertsInGroup, startIndex }) {
     if (alertsInGroup.length === 0) {
       return null;
@@ -204,6 +214,7 @@ function AlertsPage({ selectedFarm, alerts, isLoading = false }) {
               key={alert.id}
               priorityRank={startIndex + index + 1}
               returnTo={returnTo}
+              onOpenAlert={handleOpenAlert}
             />
           ))}
         </div>
@@ -311,7 +322,7 @@ function AlertsPage({ selectedFarm, alerts, isLoading = false }) {
 
       {!isLoading && alerts.length === 0 ? (
         <SectionCard subtitle="This profile currently has no mock signals wired into the shared model." title="No alerts configured">
-          <p className="detail-text">Select another farm profile to continue the demo flow.</p>
+          <p className="detail-text">No alerts are available for the current profile context.</p>
         </SectionCard>
       ) : null}
 
@@ -348,8 +359,9 @@ function AlertsPage({ selectedFarm, alerts, isLoading = false }) {
             </p>
             <Link
               className="inline-link inline-link--cta"
+              onClick={() => handleOpenAlert(leadAlert.id)}
               state={{ from: returnTo, focusAlertId: leadAlert.id }}
-              to={`/alerts/${leadAlert.id}`}
+              to="/alert"
             >
               Open priority detail
             </Link>

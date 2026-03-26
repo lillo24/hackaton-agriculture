@@ -8,6 +8,7 @@ function AlertListItem({
   isFocused = false,
   priorityRank = index + 1,
   returnTo = '/alerts',
+  onOpenAlert,
 }) {
   const sourceSummary = alert.sourceNames.length > 0 ? alert.sourceNames.join(' | ') : 'Source unavailable';
   const className = `alert-list-item alert-list-item--${alert.severity}${isFocused ? ' is-focused' : ''}`;
@@ -15,8 +16,9 @@ function AlertListItem({
   return (
     <Link
       className={className}
+      onClick={() => onOpenAlert?.(alert.id)}
       state={{ focusAlertId: alert.id, from: returnTo }}
-      to={`/alerts/${alert.id}`}
+      to="/alert"
       style={{ '--delay': `${index * 60}ms` }}
     >
       <div className="alert-list-item__row">
