@@ -7,17 +7,33 @@ function FarmVisualCard({
   farmName = 'Farm context',
   markers = defaultMarkers,
   contextPills = [],
+  signalBadges = [],
   showLegend = true,
   subtitle = 'Stylized parcel view for orientation only.',
   title = 'Farm visual context',
+  sectionClassName = '',
 }) {
   const visibleMarkers = (markers.length ? markers : defaultMarkers).slice(0, 3);
   const visiblePills = contextPills.slice(0, 4);
 
   return (
-    <SectionCard subtitle={subtitle} title={title}>
+    <SectionCard className={sectionClassName} subtitle={subtitle} title={title}>
       <div className="farm-visual-card">
         <div className="farm-visual-card__stage">
+          {signalBadges.length ? (
+            <ul aria-label="Signals" className="farm-visual-card__signals">
+              {signalBadges.map((signal) => (
+                <li
+                  className={`farm-visual-card__signal ${signal.connected ? 'is-connected' : 'is-broken'}`}
+                  key={signal.id}
+                  title={`${signal.label}: ${signal.connected ? 'connected' : 'broken'}`}
+                >
+                  {signal.icon}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+
           <svg
             aria-label={`${farmName} static parcel illustration`}
             className="farm-visual-card__scene"
@@ -25,39 +41,40 @@ function FarmVisualCard({
             viewBox="0 0 320 190"
           >
             <defs>
-              <linearGradient id="farm-plateau-top" x1="0%" x2="100%" y1="0%" y2="100%">
-                <stop offset="0%" stopColor="#dbe7d2" />
-                <stop offset="100%" stopColor="#95ad84" />
+              <linearGradient id="farm-tile-1" x1="0%" x2="100%" y1="0%" y2="100%">
+                <stop offset="0%" stopColor="#dce9c9" />
+                <stop offset="100%" stopColor="#9dbd84" />
               </linearGradient>
-              <linearGradient id="farm-plateau-side" x1="0%" x2="0%" y1="0%" y2="100%">
-                <stop offset="0%" stopColor="#84a070" />
-                <stop offset="100%" stopColor="#5f7d55" />
+              <linearGradient id="farm-tile-2" x1="0%" x2="100%" y1="0%" y2="100%">
+                <stop offset="0%" stopColor="#d4e3be" />
+                <stop offset="100%" stopColor="#91b575" />
+              </linearGradient>
+              <linearGradient id="farm-tile-3" x1="0%" x2="100%" y1="0%" y2="100%">
+                <stop offset="0%" stopColor="#c8dcae" />
+                <stop offset="100%" stopColor="#7ea466" />
+              </linearGradient>
+              <linearGradient id="farm-tile-4" x1="0%" x2="100%" y1="0%" y2="100%">
+                <stop offset="0%" stopColor="#d0e2ba" />
+                <stop offset="100%" stopColor="#8bb271" />
               </linearGradient>
             </defs>
 
-            <rect fill="#f2ebdb" height="190" rx="22" width="320" />
+            <rect fill="#f4ecda" height="190" rx="22" width="320" />
+            <polygon fill="#6c5135" points="50,95 160,152 160,184 50,127" />
+            <polygon fill="#7a5c3d" points="160,152 270,95 270,127 160,184" />
+            <polygon
+              fill="none"
+              points="160,38 270,95 160,152 50,95"
+              stroke="#5f7b4d"
+              strokeLinejoin="round"
+              strokeWidth="2"
+            />
 
-            <polygon fill="url(#farm-plateau-top)" points="52,72 181,30 283,83 156,127" />
-            <polygon fill="url(#farm-plateau-side)" points="52,72 52,116 156,168 156,127" />
-            <polygon fill="#6d8b60" points="156,127 156,168 283,122 283,83" />
-
-            <polyline fill="none" points="94,58 221,112 221,153" stroke="#c7d7bc" strokeDasharray="4 6" strokeWidth="1.8" />
-            <polyline fill="none" points="133,45 133,145" stroke="#c7d7bc" strokeDasharray="4 6" strokeWidth="1.8" />
-            <polyline fill="none" points="93,95 234,52" stroke="#d7e3d0" strokeWidth="1.6" />
-
-            <g fill="#3a5d45">
-              <circle cx="91" cy="74" r="8" />
-              <circle cx="118" cy="65" r="8" />
-              <circle cx="147" cy="56" r="8" />
-              <circle cx="177" cy="63" r="8" />
-              <circle cx="206" cy="73" r="8" />
-              <circle cx="233" cy="83" r="8" />
-            </g>
-
-            <g stroke="#f8fbf7" strokeWidth="2.2">
-              <circle cx="104" cy="100" fill="#3f6e4e" r="7" />
-              <circle cx="168" cy="80" fill="#77985f" r="7" />
-              <circle cx="214" cy="110" fill="#5c7f64" r="7" />
+            <g stroke="#6d8f5e" strokeLinejoin="round" strokeWidth="1.6">
+              <polygon fill="url(#farm-tile-1)" points="160,38 215,66 160,95 105,66" />
+              <polygon fill="url(#farm-tile-2)" points="215,66 270,95 215,124 160,95" />
+              <polygon fill="url(#farm-tile-3)" points="160,95 215,124 160,152 105,124" />
+              <polygon fill="url(#farm-tile-4)" points="105,66 160,95 105,124 50,95" />
             </g>
           </svg>
 

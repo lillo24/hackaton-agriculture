@@ -1,22 +1,207 @@
+import { useEffect, useMemo, useState } from 'react';
 import PageHeader from '../components/PageHeader';
 import SectionCard from '../components/SectionCard';
+import SoilMoistureCard from '../components/SoilMoistureCard';
+import WaterLevelCard from '../components/WaterLevelCard';
 
-function DashboardPage({ selectedFarm }) {
+const defaultAssistantPrompt = 'What should I check first this morning?';
+
+function formatAlertSummary(totalAlerts, mediumAlerts, highAlerts) {
+  return `${totalAlerts} ${totalAlerts === 1 ? 'alert' : 'alerts'}, ${mediumAlerts} medium and ${highAlerts} high`;
+}
+
+function buildMockAssistantReply({
+  prompt,
+  farmLabel,
+  totalAlerts,
+  mediumAlerts,
+  highAlerts,
+  primaryAlerts,
+}) {
+  const primaryFocusCopy = primaryAlerts === 1 ? '1 primary alert' : `${primaryAlerts} primary alerts`;
+  const highFocusCopy =
+    highAlerts > 0
+      ? `Start with the ${highAlerts === 1 ? 'high-severity alert' : `${highAlerts} high-severity alerts`}.`
+      : 'No high-severity alerts are active right now.';
+
+  return `I read: "${prompt}". For ${farmLabel}, I see ${formatAlertSummary(totalAlerts, mediumAlerts, highAlerts)}. ${highFocusCopy} Then review ${primaryFocusCopy} before closing the morning round.`;
+}
+
+function DashboardPage({ selectedFarm, alerts = [] }) {
+  const [assistantDraft, setAssistantDraft] = useState(defaultAssistantPrompt);
+  const [assistantPrompt, setAssistantPrompt] = useState(defaultAssistantPrompt);
+  const [assistantRunId, setAssistantRunId] = useState(0);
+  const [assistantReply, setAssistantReply] = useState('');
+  const [isAssistantTyping, setIsAssistantTyping] = useState(true);
+  const scopedFields = useMemo(() => {
+    const uniqueFields = new Map();
+
+    alerts.forEach((alert) => {
+      uniqueFields.set(alert.field.id, alert.field);
+    });
+
+    return Array.from(uniqueFields.values()).sort((left, right) => left.name.localeCompare(right.name));
+  }, [alerts]);
+  const primaryAlerts = useMemo(() => alerts.filter((alert) => alert.farmRelevance === 'primary').length, [alerts]);
+  const severityCounts = useMemo(
+    () =>
+      alerts.reduce(
+        (counts, alert) => {
+          if (alert.severity in counts) {
+            counts[alert.severity] += 1;
+          }
+
+          return counts;
+        },
+        { critical: 0, high: 0, medium: 0, low: 0 },
+      ),
+    [alerts],
+  );
+  const totalAlerts = alerts.length;
+  const alertVisualSummary = useMemo(
+    () => formatAlertSummary(totalAlerts, severityCounts.medium, severityCounts.high),
+    [severityCounts.high, severityCounts.medium, totalAlerts],
+  );
+  const waterTrend = useMemo(() => {
+    const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const baseline = [49, 47, 50, 56, 61, 58, 60];
+    const adjustment = Math.min(6, primaryAlerts);
+
+    return labels.map((label, index) => ({
+      label,
+      value: baseline[index] + adjustment,
+    }));
+  }, [primaryAlerts]);
+  const moistureColumns = useMemo(
+    () => [
+      { id: 'north-block', label: scopedFields[0]?.plotCode ?? 'Plot A', value: 64 },
+      { id: 'lower-block', label: scopedFields[1]?.plotCode ?? 'Plot B', value: 57 },
+      { id: 'target', label: 'Target', value: 68 },
+    ],
+    [scopedFields],
+  );
+  const mockAssistantReply = useMemo(
+    () =>
+      buildMockAssistantReply({
+        prompt: assistantPrompt,
+        farmLabel: selectedFarm.label,
+        totalAlerts,
+        mediumAlerts: severityCounts.medium,
+        highAlerts: severityCounts.high,
+        primaryAlerts,
+      }),
+    [assistantPrompt, primaryAlerts, selectedFarm.label, severityCounts.high, severityCounts.medium, totalAlerts],
+  );
+
+  useEffect(() => {
+    let characterIndex = 0;
+
+    setAssistantReply('');
+    setIsAssistantTyping(true);
+
+    const typingTimer = setInterval(() => {
+      characterIndex += 1;
+      setAssistantReply(mockAssistantReply.slice(0, characterIndex));
+
+      if (characterIndex >= mockAssistantReply.length) {
+        clearInterval(typingTimer);
+        setIsAssistantTyping(false);
+      }
+    }, 20);
+
+    return () => clearInterval(typingTimer);
+  }, [assistantRunId, mockAssistantReply]);
+
+  function handleAssistantSubmit(event) {
+    event.preventDefault();
+    const nextPrompt = assistantDraft.trim();
+
+    if (!nextPrompt) {
+      return;
+    }
+
+    setAssistantPrompt(nextPrompt);
+    setAssistantRunId((runId) => runId + 1);
+  }
+
   return (
     <div className="page dashboard-page">
       <PageHeader
-        eyebrow="Dashboard"
-        title="Future farmer dashboard"
-        description={`This home page is intentionally reserved for the upcoming daily summary in ${selectedFarm.label} operations.`}
+        title="Field pulse"
+        description={`Quick visual context for ${selectedFarm.label} operations, while alert handling remains first priority.`}
       />
 
       <SectionCard
-        subtitle="Future daily summary for the farmer."
-        title="Placeholder"
+        subtitle="Visual-first status line."
+        title="Daily summary"
       >
         <p className="detail-text">
-          This area will host daily priorities, weather risk, and field follow-ups.
+          Priority work still starts in Alerts. This view keeps orientation compact and glanceable.
         </p>
+        <div className="dashboard-intro-strip">
+          <article className="dashboard-intro-chip">
+            <span>Farm profile</span>
+            <strong>{selectedFarm.label}</strong>
+          </article>
+          <article className="dashboard-intro-chip dashboard-intro-chip--alerts">
+            <span>Alerts</span>
+            <strong>{alertVisualSummary}</strong>
+            <div className="dashboard-severity-row">
+              <p className="dashboard-severity-pill dashboard-severity-pill--medium">
+                <span className="dashboard-severity-dot" />
+                {severityCounts.medium} medium
+              </p>
+              <p className="dashboard-severity-pill dashboard-severity-pill--high">
+                <span className="dashboard-severity-dot" />
+                {severityCounts.high} high
+              </p>
+            </div>
+          </article>
+          <article className="dashboard-intro-chip">
+            <span>Plots tracked</span>
+            <strong>{scopedFields.length || 2}</strong>
+          </article>
+        </div>
+      </SectionCard>
+
+      <div className="dashboard-summary-grid">
+        <WaterLevelCard points={waterTrend} />
+        <SoilMoistureCard columns={moistureColumns} />
+      </div>
+
+      <SectionCard
+        subtitle="Placeholder for a future assistant integration."
+        title="AI assistant seed"
+      >
+        <div className="dashboard-assistant">
+          <div aria-live="polite" className="dashboard-assistant__thread">
+            <article className="dashboard-assistant__message dashboard-assistant__message--user">
+              <p>{assistantPrompt}</p>
+            </article>
+            <article className="dashboard-assistant__message dashboard-assistant__message--assistant">
+              <p>
+                {assistantReply}
+                {isAssistantTyping ? <span aria-hidden="true" className="dashboard-assistant__cursor">|</span> : null}
+              </p>
+            </article>
+          </div>
+
+          <form className="dashboard-assistant__composer" onSubmit={handleAssistantSubmit}>
+            <label className="dashboard-assistant__label" htmlFor="dashboard-assistant-input">
+              Ask something
+            </label>
+            <div className="dashboard-assistant__row">
+              <input
+                id="dashboard-assistant-input"
+                onChange={(event) => setAssistantDraft(event.target.value)}
+                placeholder="Type a farm question..."
+                type="text"
+                value={assistantDraft}
+              />
+              <button type="submit">Mock reply</button>
+            </div>
+          </form>
+        </div>
       </SectionCard>
     </div>
   );

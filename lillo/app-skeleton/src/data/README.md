@@ -4,7 +4,7 @@ Status: `DRAFT` because the structures now model shared entities consistently, b
 
 Files
 - `README.md` - folder map for the mock-data layer.
-- `mockData.js` - centralized shared entities: `farmType`, `field`, `alertSource`, `integration`, and farm-aware alert templates including provenance copy (`relevanceReasons`, `sourceContributions`).
+- `mockData.js` - centralized shared entities: `farmType` (including compact profile identity keys such as `cropType`, `soilType`, `plotBlocks`, `irrigationProfile`, `monitoringMode`), `field`, `alertSource`, `integration`, and farm-aware alert templates including provenance copy (`relevanceReasons`, `sourceContributions`).
 - `selectors.js` - source-of-truth selectors that derive farm-specific alerts, source-level provenance details, and linked feed context from shared entities.
 
 Why this lives alone

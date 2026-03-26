@@ -63,7 +63,7 @@ function App() {
     <Routes>
       <Route element={<AppShell selectedFarm={selectedFarm} alerts={alerts} />}>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard" element={<DashboardPage selectedFarm={selectedFarm} />} />
+        <Route path="/dashboard" element={<DashboardPage alerts={alerts} selectedFarm={selectedFarm} />} />
         <Route
           path="/alerts"
           element={

@@ -1,79 +1,38 @@
 import { useEffect, useRef, useState } from 'react';
 import './RoadmapPresentation.css';
 
-const slideshowSteps = [
-  {
-    id: 'intro',
-    title: 'Canvas',
-    caption: 'Distribuzione uno-a-molti. Tocca il palco per avviare la sequenza.',
-  },
-  {
-    id: 'company',
-    title: 'Platform',
-    caption: 'Il nodo Company / Platform entra in scena come hub segnali.',
-  },
-  {
-    id: 'consorzio',
-    title: 'Consorzio',
-    caption: 'Il Consorzio appare come centro operativo per territorio e filiera.',
-  },
-  {
-    id: 'bridge',
-    title: 'Connessione',
-    caption: 'Si genera il collegamento tra piattaforma e Consorzio.',
-  },
-  {
-    id: 'farmers',
-    title: 'Distribuzione',
-    caption: 'Il Consorzio abilita molte aziende agricole collegate.',
-  },
-  {
-    id: 'costi',
-    title: 'Costi',
-    caption: 'Non un altro pannello dati, ma un hub di segnali e alert.',
-  },
-];
+const TOTAL_STEPS = 6;
 
-const farmerNodes = [
-  { id: 'farmer-01', label: 'Agricoltore 01', x: '72%', y: '22%', length: '37%', angle: '-58deg', delay: '0.04s' },
-  { id: 'farmer-02', label: 'Agricoltore 02', x: '84%', y: '30%', length: '39%', angle: '-30deg', delay: '0.11s' },
-  { id: 'farmer-03', label: 'Agricoltore 03', x: '79%', y: '46%', length: '29%', angle: '-8deg', delay: '0.2s' },
-  { id: 'farmer-04', label: 'Agricoltore 04', x: '86%', y: '62%', length: '38%', angle: '18deg', delay: '0.29s' },
-  { id: 'farmer-05', label: 'Agricoltore 05', x: '74%', y: '78%', length: '37%', angle: '49deg', delay: '0.37s' },
-  { id: 'farmer-06', label: 'Agricoltore 06', x: '64%', y: '60%', length: '17%', angle: '35deg', delay: '0.44s' },
-];
+const CONSORZIO_CENTER = { x: 50, y: 50 };
+const BRANCH_HUB = { x: 62, y: 50 };
+const FARMER_ARC_ANGLES = [-72, -46, -20, 20, 46, 72];
+const FARMER_ARC_RADIUS = { x: 30, y: 27 };
+const COMPANY_BRIDGE_PATH = 'M 31.2 53.2 C 35.8 54.1, 40.8 51.4, 45.4 50.2';
+const DISTRIBUTION_TRUNK_PATH = 'M 50 50 C 53.8 50.4, 57.1 49.8, 62 50';
 
-const costPillars = [
-  {
-    id: 'ui',
-    title: 'Prodotto / UI',
-    focus: 'Costo in discesa',
-    points: ['Strumenti AI accelerano prototipazione e iterazione.', 'Piu energia sulla logica del prodotto, meno sul pixel pushing.'],
-  },
-  {
-    id: 'integration',
-    title: 'Ingegneria di integrazione',
-    focus: 'Costo principale',
-    points: [
-      'Connessione fonti eterogenee, normalizzazione e qualita dati.',
-      'Traduzione in alert chiari, con priorita e azioni consigliate.',
-    ],
-  },
-  {
-    id: 'sources',
-    title: 'Costo fonti',
-    focus: 'Ottimizzazione continua',
-    points: [
-      'Mix sostenibile tra open, low-cost e provider premium.',
-      'Scelta dinamica della combinazione migliore per scenario.',
-    ],
-  },
-];
+const farmerNodes = FARMER_ARC_ANGLES.map((angle, index, angles) => {
+  const radians = (angle * Math.PI) / 180;
+  const x = CONSORZIO_CENTER.x + FARMER_ARC_RADIUS.x * Math.cos(radians);
+  const y = CONSORZIO_CENTER.y + FARMER_ARC_RADIUS.y * Math.sin(radians);
+  const centerOffset = index - (angles.length - 1) / 2;
+  const controlX = (BRANCH_HUB.x + x) / 2 + 2.8;
+  const controlY = (BRANCH_HUB.y + y) / 2 + centerOffset * 1.6;
 
-const rolloutSteps = [
-  { id: 'verticale', title: 'Verticale iniziale', text: 'Partenza da vigneto: segnali, soglie e flussi essenziali.' },
-  { id: 'affinamento', title: 'Affinamento', text: 'Feedback di campo per migliorare logiche, alert e onboarding.' },
-  { id: 'espansione', title: 'Espansione', text: 'Profilo azienda + dati disponibili + sensori specifici quando utili.' },
+  return {
+    id: `farmer-${String(index + 1).padStart(2, '0')}`,
+    x: `${x.toFixed(2)}%`,
+    y: `${y.toFixed(2)}%`,
+    delay: `${(0.08 + index * 0.07).toFixed(2)}s`,
+    branchDelay: `${(0.42 + index * 0.11).toFixed(2)}s`,
+    branchPath: `M ${BRANCH_HUB.x} ${BRANCH_HUB.y} Q ${controlX.toFixed(2)} ${controlY.toFixed(2)} ${x.toFixed(2)} ${y.toFixed(2)}`,
+  };
+});
+
+const costSlices = [
+  { id: 'ui', label: 'UI + Prodotto', time: '2w', cost: '€6k', weight: 34 },
+  { id: 'integration', label: 'Integrazioni dati', time: '5w', cost: '€18k', weight: 100, primary: true },
+  { id: 'rollout', label: 'Rollout', time: '3w', cost: '€9k', weight: 50 },
+  { id: 'ops', label: 'Ops mensile', time: 'continuo', cost: '€2k', weight: 20 },
 ];
 
 function CompanyIcon() {
@@ -103,17 +62,32 @@ function ConsorzioIcon() {
 function FarmerIcon() {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24">
-      <circle cx="12" cy="8.2" r="2.4" />
-      <path d="M7.8 18a4.2 4.2 0 0 1 8.4 0" />
-      <path d="M5.2 12.2h13.6" />
+      <path d="M4.8 9.1h14.4" />
+      <path d="M8.3 9.1c0-2 1.7-3.7 3.7-3.7s3.7 1.7 3.7 3.7" />
+      <circle cx="12" cy="12" r="2.2" />
+      <path d="M7.4 18.1a4.6 4.6 0 0 1 9.2 0" />
+      <path d="M10.1 15.1 12 16.4l1.9-1.3" />
     </svg>
   );
 }
 
-function RoadmapPresentation({ alertsCount, selectedFarm }) {
+function ArrowIcon({ direction }) {
+  const transform = direction === 'back' ? 'rotate(180 12 12)' : undefined;
+
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <g transform={transform}>
+        <path d="M6 12h12" />
+        <path d="M13 7l5 5-5 5" />
+      </g>
+    </svg>
+  );
+}
+
+function RoadmapPresentation() {
   const [step, setStep] = useState(0);
-  const slideshowRef = useRef(null);
-  const lastStep = slideshowSteps.length - 1;
+  const roadmapRef = useRef(null);
+  const lastStep = TOTAL_STEPS - 1;
   const canGoBack = step > 0;
   const canAdvance = step < lastStep;
   const showCompany = step >= 1;
@@ -121,40 +95,35 @@ function RoadmapPresentation({ alertsCount, selectedFarm }) {
   const showBridge = step >= 3;
   const showFarmers = step >= 4;
   const showCosts = step >= 5;
-  const currentStep = slideshowSteps[step];
+
+  useEffect(() => {
+    roadmapRef.current?.focus();
+  }, []);
 
   const advanceStep = () => {
-    setStep((current) => Math.min(lastStep, current + 1));
+    if (canAdvance) {
+      setStep((current) => Math.min(lastStep, current + 1));
+    }
   };
 
   const retreatStep = () => {
-    setStep((current) => Math.max(0, current - 1));
+    if (canGoBack) {
+      setStep((current) => Math.max(0, current - 1));
+    }
   };
-
-  const restartStory = () => {
-    setStep(0);
-  };
-
-  useEffect(() => {
-    slideshowRef.current?.focus();
-  }, []);
 
   const handleStageClick = (event) => {
     if (event.target.closest('[data-roadmap-control]')) {
       return;
     }
 
-    if (canAdvance) {
-      advanceStep();
-    }
+    advanceStep();
   };
 
   const handleKeyDown = (event) => {
     if (event.key === 'ArrowRight' || event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
-      if (canAdvance) {
-        advanceStep();
-      }
+      advanceStep();
       return;
     }
 
@@ -169,151 +138,120 @@ function RoadmapPresentation({ alertsCount, selectedFarm }) {
       className={`roadmap-presentation roadmap-presentation--step-${step}`}
       onClick={handleStageClick}
       onKeyDown={handleKeyDown}
-      ref={slideshowRef}
+      ref={roadmapRef}
       tabIndex={0}
     >
-      <header className="roadmap-presentation__toolbar" data-roadmap-control>
-        <div className="roadmap-presentation__context">
-          <p className="roadmap-presentation__eyebrow">Roadmap narrativo</p>
-          <p className="roadmap-presentation__meta">
-            <span>{selectedFarm.label}</span>
-            <span>{alertsCount} alert nel demo</span>
-          </p>
-        </div>
+      <section aria-label="Roadmap canvas" className="roadmap-stage" role="presentation">
+        {showBridge ? (
+          <svg aria-hidden="true" className="roadmap-connection-layer roadmap-connection-layer--bridge" viewBox="0 0 100 100">
+            <path className="roadmap-path roadmap-path--bridge" d={COMPANY_BRIDGE_PATH} pathLength="1" />
+          </svg>
+        ) : null}
 
-        <div aria-live="polite" className="roadmap-progress">
-          <p className="roadmap-progress__label">
-            Step {step + 1}/{slideshowSteps.length}: {currentStep.title}
-          </p>
-          <ol className="roadmap-progress__dots">
-            {slideshowSteps.map((progressStep, index) => {
-              const statusClass = index === step ? ' is-active' : index < step ? ' is-complete' : '';
-              return <li className={statusClass} key={progressStep.id} />;
-            })}
-          </ol>
-        </div>
+        {showFarmers ? (
+          <svg
+            aria-hidden="true"
+            className="roadmap-connection-layer roadmap-connection-layer--distribution"
+            viewBox="0 0 100 100"
+          >
+            <path className="roadmap-path roadmap-path--trunk" d={DISTRIBUTION_TRUNK_PATH} pathLength="1" />
+            {farmerNodes.map((node) => (
+              <path
+                className="roadmap-path roadmap-path--branch"
+                d={node.branchPath}
+                key={`${node.id}-line`}
+                pathLength="1"
+                style={{ '--path-delay': node.branchDelay }}
+              />
+            ))}
+          </svg>
+        ) : null}
 
-        <div className="roadmap-presentation__actions">
+        {showCompany ? (
+          <article className="roadmap-node roadmap-node--company">
+            <span className="roadmap-node__icon">
+              <CompanyIcon />
+            </span>
+            <span className="roadmap-node__label">Company / Platform</span>
+          </article>
+        ) : null}
+
+        {showConsorzio ? (
+          <article className={`roadmap-node roadmap-node--consorzio${showFarmers ? ' is-distributing' : ''}`}>
+            <span className="roadmap-node__icon">
+              <ConsorzioIcon />
+            </span>
+            <span className="roadmap-node__label">Consorzio</span>
+          </article>
+        ) : null}
+
+        <ul className={`roadmap-farmers${showFarmers ? ' is-visible' : ''}`}>
+          {farmerNodes.map((node, index) => (
+            <li
+              aria-label={`Agricoltore ${index + 1}`}
+              className="roadmap-node roadmap-node--farmer"
+              key={node.id}
+              style={{
+                '--node-delay': node.delay,
+                '--node-x': node.x,
+                '--node-y': node.y,
+              }}
+            >
+              <FarmerIcon />
+            </li>
+          ))}
+        </ul>
+
+        {showCosts ? (
+          <aside aria-label="Stima costi e tempi" className="roadmap-costs">
+            <header className="roadmap-costs__header">
+              <p className="roadmap-costs__title">Costi e tempi</p>
+              <p className="roadmap-costs__totals">
+                <span>~10 settimane</span>
+                <span>~€33k</span>
+              </p>
+            </header>
+
+            <ul className="roadmap-costs__list">
+              {costSlices.map((slice) => (
+                <li
+                  className={`roadmap-costs__item${slice.primary ? ' is-primary' : ''}`}
+                  key={slice.id}
+                  style={{ '--cost-width': `${slice.weight}%` }}
+                >
+                  <p className="roadmap-costs__row">
+                    <span className="roadmap-costs__name">{slice.label}</span>
+                    <span className="roadmap-costs__time">{slice.time}</span>
+                    <span className="roadmap-costs__value">{slice.cost}</span>
+                  </p>
+                  <span aria-hidden="true" className="roadmap-costs__bar">
+                    <span />
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </aside>
+        ) : null}
+
+        <div className="roadmap-controls" data-roadmap-control>
           <button
+            aria-label="Step precedente"
             data-roadmap-control
             disabled={!canGoBack}
             onClick={retreatStep}
             type="button"
           >
-            Indietro
+            <ArrowIcon direction="back" />
           </button>
-          {canAdvance ? (
-            <button data-roadmap-control onClick={advanceStep} type="button">
-              Avanti
-            </button>
-          ) : (
-            <button data-roadmap-control onClick={restartStory} type="button">
-              Ricomincia
-            </button>
-          )}
-        </div>
-      </header>
-
-      <section aria-labelledby="roadmap-story-title" className="roadmap-story">
-        <header className="roadmap-story__headline">
-          <p className="roadmap-story__kicker">Marketing</p>
-          <h1 id="roadmap-story-title">Company -&gt; Consorzio -&gt; molti agricoltori</h1>
-          <p>{currentStep.caption}</p>
-        </header>
-
-        <div className="roadmap-story__canvas" role="presentation">
-          <p className={`roadmap-story__hint${canAdvance ? ' is-visible' : ''}`}>Tocca il canvas per il prossimo step</p>
-
-          {showBridge ? <span aria-hidden="true" className="roadmap-line roadmap-line--bridge" /> : null}
-
-          {showFarmers ? (
-            <div aria-hidden="true" className="roadmap-story__fan-lines">
-              {farmerNodes.map((node) => (
-                <span
-                  className="roadmap-line roadmap-line--fan"
-                  key={`${node.id}-line`}
-                  style={{
-                    '--line-angle': node.angle,
-                    '--line-delay': node.delay,
-                    '--line-length': node.length,
-                  }}
-                />
-              ))}
-            </div>
-          ) : null}
-
-          {showCompany ? (
-            <article className="roadmap-node roadmap-node--company">
-              <span className="roadmap-node__icon">
-                <CompanyIcon />
-              </span>
-              <span className="roadmap-node__label">Company / Platform</span>
-              <strong>Signal Hub</strong>
-            </article>
-          ) : null}
-
-          {showConsorzio ? (
-            <article className="roadmap-node roadmap-node--consorzio">
-              <span className="roadmap-node__icon">
-                <ConsorzioIcon />
-              </span>
-              <span className="roadmap-node__label">Consorzio</span>
-              <strong>Nodo abilitante</strong>
-            </article>
-          ) : null}
-
-          <ul className={`roadmap-farmers${showFarmers ? ' is-visible' : ''}`}>
-            {farmerNodes.map((node) => (
-              <li
-                className="roadmap-node roadmap-node--farmer"
-                key={node.id}
-                style={{
-                  '--node-delay': node.delay,
-                  '--node-x': node.x,
-                  '--node-y': node.y,
-                }}
-              >
-                <FarmerIcon />
-                <span>{node.label}</span>
-              </li>
-            ))}
-          </ul>
-
-          {showFarmers ? <p className="roadmap-farmers__label">Agricoltori</p> : null}
-        </div>
-      </section>
-
-      <section aria-hidden={!showCosts} className={`roadmap-costs${showCosts ? ' is-visible' : ''}`}>
-        <header className="roadmap-costs__heading">
-          <p className="roadmap-story__kicker">Costi</p>
-          <h2>Dove si concentra il valore economico</h2>
-        </header>
-
-        <div className="roadmap-costs__grid">
-          {costPillars.map((pillar, index) => (
-            <article className={`roadmap-cost-card${pillar.id === 'integration' ? ' roadmap-cost-card--primary' : ''}`} key={pillar.id}>
-              <p className="roadmap-cost-card__index">{String(index + 1).padStart(2, '0')}</p>
-              <h3>{pillar.title}</h3>
-              <p className="roadmap-cost-card__focus">{pillar.focus}</p>
-              <ul>
-                {pillar.points.map((point) => (
-                  <li key={point}>{point}</li>
-                ))}
-              </ul>
-            </article>
-          ))}
-        </div>
-
-        <div className="roadmap-rollout">
-          <p className="roadmap-rollout__label">Evoluzione prodotto</p>
-          <div className="roadmap-rollout__steps">
-            {rolloutSteps.map((rolloutStep) => (
-              <article className="roadmap-rollout__step" key={rolloutStep.id}>
-                <h4>{rolloutStep.title}</h4>
-                <p>{rolloutStep.text}</p>
-              </article>
-            ))}
-          </div>
+          <button
+            aria-label="Step successivo"
+            data-roadmap-control
+            disabled={!canAdvance}
+            onClick={advanceStep}
+            type="button"
+          >
+            <ArrowIcon direction="next" />
+          </button>
         </div>
       </section>
     </article>

@@ -80,7 +80,7 @@ function PreviewApp({ previewMode }) {
   );
 }
 
-function AppShell({ selectedFarm, alerts }) {
+function AppShell() {
   const [previewMode, setPreviewMode] = useState('phone');
   const previewApp = <PreviewApp previewMode={previewMode} />;
   const isRoadmap = previewMode === 'roadmap';
@@ -114,7 +114,7 @@ function AppShell({ selectedFarm, alerts }) {
 
       <section className={`app-shell__preview-stage app-shell__preview-stage--${previewMode}`}>
         {isRoadmap ? (
-          <RoadmapPresentation alertsCount={alerts.length} selectedFarm={selectedFarm} />
+          <RoadmapPresentation />
         ) : previewMode === 'phone' ? (
           <PhoneFrame>{previewApp}</PhoneFrame>
         ) : (

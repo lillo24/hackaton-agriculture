@@ -3,7 +3,7 @@ import { useLocation, useSearchParams } from 'react-router-dom';
 import AlertListItem from '../components/AlertListItem';
 import SectionCard from '../components/SectionCard';
 import StatusBadge from '../components/StatusBadge';
-import { alertSeverityScale, alertStatusScale, farmRelevanceScale } from '../data/mockData';
+import { alertSeverityScale, farmRelevanceScale } from '../data/mockData';
 
 const severityPriority = { critical: 4, high: 3, medium: 2, low: 1 };
 const statusPriority = { new: 5, active: 4, monitoring: 3, acknowledged: 2, resolved: 1 };
@@ -117,18 +117,13 @@ function AlertsPage({
   }, [rankedAlerts]);
 
   const severityFilter = readFilter(searchParams, 'severity', alertSeverityScale);
-  const statusFilter = readFilter(searchParams, 'status', alertStatusScale);
   const sourceFilter = readFilter(searchParams, 'source', sourceOptions.map((source) => source.id));
   const relevanceFilter = readFilter(searchParams, 'relevance', farmRelevanceScale);
-  const hasActiveFilters = [severityFilter, statusFilter, sourceFilter, relevanceFilter].some((value) => value !== 'all');
+  const hasActiveFilters = [severityFilter, sourceFilter, relevanceFilter].some((value) => value !== 'all');
   const filteredAlerts = useMemo(
     () =>
       rankedAlerts.filter((alert) => {
         if (severityFilter !== 'all' && alert.severity !== severityFilter) {
-          return false;
-        }
-
-        if (statusFilter !== 'all' && alert.status !== statusFilter) {
           return false;
         }
 
@@ -142,7 +137,7 @@ function AlertsPage({
 
         return true;
       }),
-    [rankedAlerts, relevanceFilter, severityFilter, sourceFilter, statusFilter],
+    [rankedAlerts, relevanceFilter, severityFilter, sourceFilter],
   );
   const groupedAlerts = useMemo(() => {
     const nextGroups = {
@@ -160,12 +155,10 @@ function AlertsPage({
 
   const hasActionNow = groupedAlerts.actionNow.length > 0;
   const returnTo = `${location.pathname}${location.search}`;
-  const criticalCount = filteredAlerts.filter((alert) => alert.severity === 'critical').length;
-  const activeCount = filteredAlerts.filter((alert) => alert.status === 'new' || alert.status === 'active').length;
-  const monitoringCount = filteredAlerts.filter((alert) => alert.status === 'monitoring' || alert.status === 'acknowledged').length;
 
   function updateFilter(filterName, nextValue) {
     const nextSearch = new URLSearchParams(searchParams);
+    nextSearch.delete('status');
 
     if (nextValue === 'all') {
       nextSearch.delete(filterName);
@@ -184,25 +177,32 @@ function AlertsPage({
     onSelectAlert?.(alertId);
   }
 
-  function renderAlertGroup({ title, subtitle, alertsInGroup, startIndex }) {
+  function renderAlertGroup({
+    title,
+    subtitle,
+    alertsInGroup,
+    startIndex,
+    showHeader = true,
+  }) {
     if (alertsInGroup.length === 0) {
       return null;
     }
 
     return (
-      <section className="alert-group" key={title}>
-        <header className="alert-group__header">
-          <div>
-            <h2 className="alert-group__title">{title}</h2>
-            <p className="alert-group__subtitle">{subtitle}</p>
-          </div>
-          <StatusBadge tone="neutral">{alertsInGroup.length}</StatusBadge>
-        </header>
+      <section className={`alert-group${showHeader ? '' : ' alert-group--unstyled'}`} key={title}>
+        {showHeader ? (
+          <header className="alert-group__header">
+            <div>
+              <h2 className="alert-group__title">{title}</h2>
+              <p className="alert-group__subtitle">{subtitle}</p>
+            </div>
+            <StatusBadge tone="neutral">{alertsInGroup.length}</StatusBadge>
+          </header>
+        ) : null}
         <div className="alert-list">
           {alertsInGroup.map((alert, index) => (
             <AlertListItem
               alert={alert}
-              groupLabel={title}
               index={startIndex + index}
               isFocused={focusedAlertId === alert.id}
               key={alert.id}
@@ -216,13 +216,8 @@ function AlertsPage({
   }
 
   return (
-    <div className="page">
-      <SectionCard title="Filters">
-        <div className="badge-row">
-          <StatusBadge tone="critical">{criticalCount} critical</StatusBadge>
-          <StatusBadge tone="active">{activeCount} active</StatusBadge>
-          <StatusBadge tone="monitoring">{monitoringCount} monitoring</StatusBadge>
-        </div>
+    <div className="page alerts-page">
+      <section aria-label="Alert filters" className="alerts-filter-panel">
         <div className="filter-grid filter-grid--alerts">
           <label className="filter-field" htmlFor="severity-filter">
             Severity
@@ -236,23 +231,6 @@ function AlertsPage({
               {alertSeverityScale.map((severity) => (
                 <option key={severity} value={severity}>
                   {formatOptionLabel(severity)}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="filter-field" htmlFor="status-filter">
-            Status
-            <select
-              className="filter-control"
-              id="status-filter"
-              onChange={(event) => updateFilter('status', event.target.value)}
-              value={statusFilter}
-            >
-              <option value="all">All</option>
-              {alertStatusScale.map((status) => (
-                <option key={status} value={status}>
-                  {formatOptionLabel(status)}
                 </option>
               ))}
             </select>
@@ -293,15 +271,14 @@ function AlertsPage({
           </label>
         </div>
 
-        <div className="filter-footer">
-          <p className="filter-footer__summary">{filteredAlerts.length} alerts in current view</p>
-          {hasActiveFilters ? (
+        {hasActiveFilters ? (
+          <div className="filter-footer">
             <button className="inline-action" onClick={clearFilters} type="button">
               Clear filters
             </button>
-          ) : null}
-        </div>
-      </SectionCard>
+          </div>
+        ) : null}
+      </section>
 
       {isLoading ? <AlertsLoadingState /> : null}
 
@@ -323,8 +300,8 @@ function AlertsPage({
       ) : null}
 
       {!isLoading && filteredAlerts.length > 0 && !hasActionNow ? (
-        <SectionCard subtitle="Current alerts are mostly low intensity or monitoring states." title="No high-priority alerts">
-          <p className="detail-text">The feed remains healthy; keep monitoring active and follow the scheduled checks.</p>
+        <SectionCard subtitle="Current alerts are mostly low intensity and stable states." title="No high-priority alerts">
+          <p className="detail-text">The feed remains healthy; keep regular checks active and follow the scheduled plan.</p>
         </SectionCard>
       ) : null}
 
@@ -335,12 +312,14 @@ function AlertsPage({
             subtitle: 'Critical and active signals that should drive the immediate response queue.',
             alertsInGroup: groupedAlerts.actionNow,
             startIndex: 0,
+            showHeader: false,
           })}
           {renderAlertGroup({
             title: 'Monitor',
             subtitle: 'Signals that are stable enough for watch-mode and scheduled checks.',
             alertsInGroup: groupedAlerts.monitor,
             startIndex: groupedAlerts.actionNow.length,
+            showHeader: false,
           })}
           {renderAlertGroup({
             title: 'Recently resolved',

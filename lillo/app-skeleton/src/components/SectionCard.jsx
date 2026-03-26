@@ -1,6 +1,8 @@
-function SectionCard({ title, subtitle, children }) {
+function SectionCard({ title, subtitle, children, className = '' }) {
+  const sectionClassName = className ? `section-card ${className}` : 'section-card';
+
   return (
-    <section className="section-card">
+    <section className={sectionClassName}>
       {(title || subtitle) && (
         <div className="section-card__header">
           {title ? <h3 className="section-card__title">{title}</h3> : null}

@@ -6,8 +6,8 @@ Files
 - `README.md` (`STABLE`) - folder map for shell-level files and ownership notes.
 - `AppShell.jsx` (`DRAFT`) - owns shell composition, preview-mode state, mode toggle UI, four-item primary nav (`Dashboard`, `Alerts`, `Alert`, `Profile`) with icons, and stage wrapper selection (`PhoneFrame`, desktop preview frame, or Roadmap presentation mode).
 - `AppShell.css` (`DRAFT`) - styles for the outer shell (toggle + preview stage), including roadmap-specific toggle docking/shrinking transition and presentation-canvas stage treatment.
-- `RoadmapPresentation.jsx` (`DRAFT`) - dedicated presentation-mode slideshow rendered only in `Roadmap` mode; owns step state, click/keyboard progression, and staged Marketing -> Costi narrative.
-- `RoadmapPresentation.css` (`DRAFT`) - visual system, hierarchy, and reveal animations for the roadmap slideshow, network story sequence, and cost pillars.
+- `RoadmapPresentation.jsx` (`DRAFT`) - dedicated presentation-mode canvas rendered only in `Roadmap` mode; owns step state, click/keyboard progression, animated Company -> Consorzio -> many farmers sequence, and final visual cost/time overlay step.
+- `RoadmapPresentation.css` (`DRAFT`) - full-bleed roadmap canvas styling plus node/line reveal animations, floating arrow controls, and compact cost/time panel visuals.
 
 Why these live together
 - `AppShell.jsx` owns app-wide presentation structure and preview wrapper decisions.
@@ -16,5 +16,6 @@ Why these live together
 
 Non-obvious behavior
 - `Roadmap` mode intentionally bypasses both phone and desktop app wrappers: routed `Outlet` content is not rendered in that mode.
-- `RoadmapPresentation` advances by stage click/tap, keyboard (`ArrowLeft`, `ArrowRight`, `Enter`, `Space`), or next/previous controls; all reveal logic is driven by a local step state.
-- When `Roadmap` is active, the top mode toggle intentionally docks left and scales down to make the stage feel presentation-first; it restores centered/full size when leaving roadmap mode.
+- `RoadmapPresentation` advances by stage click/tap, keyboard (`ArrowLeft`, `ArrowRight`, `Enter`, `Space`), or floating arrow controls; all reveal logic is driven by a local step state.
+- In `Roadmap` mode, the shell switches to a single full-bleed stage with no outer container; the preview-mode toggle becomes fixed/overlayed at the top-left and does not consume layout space.
+- Final roadmap step overlays a compact visual estimate panel (`time + cost`) inside the same canvas, while dimming the network layer to keep focus on costs.

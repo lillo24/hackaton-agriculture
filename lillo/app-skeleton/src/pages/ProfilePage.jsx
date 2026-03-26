@@ -1,9 +1,6 @@
 import { useMemo } from 'react';
 import FarmVisualCard from '../components/FarmVisualCard';
 import PageHeader from '../components/PageHeader';
-import SectionCard from '../components/SectionCard';
-import SoilMoistureCard from '../components/SoilMoistureCard';
-import WaterLevelCard from '../components/WaterLevelCard';
 
 function readIntegrationStatus(integrations, integrationId) {
   return integrations.find((integration) => integration.id === integrationId)?.status ?? 'neutral';
@@ -55,149 +52,50 @@ function ProfilePage({ selectedFarm, alerts, integrations }) {
 
     return Array.from(uniqueFields.values()).sort((left, right) => left.name.localeCompare(right.name));
   }, [alerts]);
-  const connectedFeeds = useMemo(
-    () => new Set(alerts.flatMap((alert) => alert.relatedIntegrationIds)).size,
-    [alerts],
-  );
-  const primaryAlerts = alerts.filter((alert) => alert.farmRelevance === 'primary').length;
   const profileSources = useMemo(
     () => [
       {
         id: 'unite-iot',
-        label: 'Unite IoT',
+        label: 'Sensors',
         type: 'sensor',
         status: readIntegrationStatus(integrations, 'iot-sensors'),
-        caption: 'Air, soil, and moisture telemetry',
       },
       {
         id: 'weather',
         label: 'Weather',
         type: 'weather',
         status: readIntegrationStatus(integrations, 'weather-api'),
-        caption: 'Rain, wind, and overnight windows',
       },
       {
         id: 'satellite',
         label: 'Satellite',
         type: 'satellite',
         status: readIntegrationStatus(integrations, 'satellite-data'),
-        caption: 'Thermal and vegetation scan context',
       },
     ],
     [integrations],
   );
-  const centerPills = useMemo(
-    () => [
-      { label: 'Farm type', value: selectedFarm.label },
-      { label: 'Role', value: 'Operations' },
-      { label: 'Live alerts', value: String(alerts.length) },
-      { label: 'Primary', value: String(primaryAlerts) },
-    ],
-    [alerts.length, primaryAlerts, selectedFarm.label],
-  );
-
-  const waterTrend = useMemo(() => {
-    const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    const baseline = [49, 47, 50, 56, 61, 58, 60];
-    const adjustment = Math.min(6, primaryAlerts);
-
-    return labels.map((label, index) => ({
-      label,
-      value: baseline[index] + adjustment,
-    }));
-  }, [primaryAlerts]);
-
-  const moistureColumns = useMemo(
-    () => [
-      { id: 'north-block', label: fieldContext[0]?.plotCode ?? 'Plot A', value: 64 },
-      { id: 'lower-block', label: fieldContext[1]?.plotCode ?? 'Plot B', value: 57 },
-      { id: 'target', label: 'Target', value: 68 },
-    ],
-    [fieldContext],
-  );
+  const signalBadges = profileSources.map((source) => ({
+    id: source.id,
+    label: source.label,
+    connected: isSourceConnected(source.status),
+    icon: <SourceIcon type={source.type} />,
+  }));
 
   return (
     <div className="page profile-page">
-      <PageHeader
-        eyebrow="Profile"
-        title={`${selectedFarm.label} farm context`}
-        description="Read-only farm context currently used by alert prioritization and action suggestions."
-        trailing={<span className="profile-readonly-pill">Read-only</span>}
-      />
+      <PageHeader title="Giorgio's farm" />
 
-      <div className="profile-stage-grid">
-        <div className="profile-stage-panel profile-stage-panel--sources">
-          <SectionCard subtitle="Green means connected. Red means broken." title="Connected sources">
-            <div className="profile-source-visual-list">
-              {profileSources.map((source) => {
-                const connected = isSourceConnected(source.status);
-
-                return (
-                  <article className="profile-source-visual-item" key={source.id}>
-                    <div className={`profile-source-visual-icon ${connected ? 'is-connected' : 'is-broken'}`}>
-                      <SourceIcon type={source.type} />
-                    </div>
-
-                    <div className="profile-source-visual-copy">
-                      <p>{source.label}</p>
-                      <span>{source.caption}</span>
-                    </div>
-
-                    <span
-                      aria-label={connected ? `${source.label} connected` : `${source.label} broken`}
-                      className={`profile-connection-dot ${connected ? 'is-connected' : 'is-broken'}`}
-                      title={connected ? 'Connected' : 'Broken'}
-                    />
-                  </article>
-                );
-              })}
-            </div>
-          </SectionCard>
-        </div>
-
-        <div className="profile-stage-panel profile-stage-panel--center">
-          <FarmVisualCard
-            contextPills={centerPills}
-            farmName={`${selectedFarm.label} Cooperative Unit`}
-            markers={fieldContext.map((field) => field.name)}
-            showLegend={false}
-            subtitle="Minimal static scene of the active profile."
-            title="Farm context map"
-          />
-        </div>
-
-        <div className="profile-stage-panel profile-stage-panel--context">
-          <SectionCard subtitle="Read-only context dimensions currently in active use." title="Basic farm context">
-            <div className="profile-context-strip">
-              <article className="profile-context-pill">
-                <span>Plots in scope</span>
-                <strong>{fieldContext.length}</strong>
-              </article>
-              <article className="profile-context-pill">
-                <span>Crop profile</span>
-                <strong>{selectedFarm.label}</strong>
-              </article>
-              <article className="profile-context-pill">
-                <span>Feeds active</span>
-                <strong>{connectedFeeds}</strong>
-              </article>
-            </div>
-
-            <ul className="profile-field-list">
-              {fieldContext.map((field) => (
-                <li key={field.id}>
-                  <strong>{field.name}</strong>
-                  <span>{field.plotCode}</span>
-                </li>
-              ))}
-            </ul>
-          </SectionCard>
-        </div>
-      </div>
-
-      <div className="profile-support-grid">
-        <WaterLevelCard points={waterTrend} />
-        <SoilMoistureCard columns={moistureColumns} />
+      <div className="profile-stage">
+        <FarmVisualCard
+          farmName={`${selectedFarm.label} Cooperative Unit`}
+          markers={fieldContext.map((field) => field.plotCode)}
+          sectionClassName="profile-farm-stage-card"
+          signalBadges={signalBadges}
+          showLegend={false}
+          subtitle={null}
+          title={null}
+        />
       </div>
     </div>
   );
