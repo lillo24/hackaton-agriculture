@@ -194,13 +194,47 @@ function formatChipLabel(value) {
 function AlertListItem({
   alert,
   index = 0,
+  isHistorical = false,
   isFocused = false,
   returnTo = '/alerts',
   onOpenAlert,
 }) {
-  const className = `alert-list-item alert-list-item--${alert.severity}${isFocused ? ' is-focused' : ''}`;
+  const className = `alert-list-item alert-list-item--${alert.severity}${isFocused ? ' is-focused' : ''}${
+    isHistorical ? ' is-historical' : ''
+  }`;
   const signalIcon = pickSignalIcon(alert.sourceIds, alert.sourceNames);
   const problemIcon = pickProblemIcon(alert);
+  const cardContent = (
+    <div className="alert-list-item__layout">
+      <div className="alert-list-item__main">
+        <div className="alert-list-item__row">
+          <div className="alert-list-item__chips">
+            <StatusBadge tone={alert.severity}>{formatChipLabel(alert.severity)}</StatusBadge>
+            {alert.status === 'new' ? (
+              <span aria-label="New alert" className="alert-list-item__new-dot" role="img" title="New alert" />
+            ) : null}
+          </div>
+          <span className="alert-list-item__timestamp">{alert.timestampLabel}</span>
+        </div>
+        <h3 className="alert-list-item__title">{alert.title}</h3>
+        <p className="alert-list-item__description">{alert.summary}</p>
+      </div>
+      <div className="alert-list-item__side">
+        <div className="alert-list-item__icons alert-list-item__icons--large" role="presentation">
+          <AlertIcon label={signalIcon.label} type={signalIcon.type} />
+          <AlertIcon label={`Problem type: ${problemIcon.label}`} type={problemIcon.type} />
+        </div>
+      </div>
+    </div>
+  );
+
+  if (isHistorical) {
+    return (
+      <article aria-label={`Historical alert: ${alert.title}`} className={className} style={{ '--delay': `${index * 60}ms` }}>
+        {cardContent}
+      </article>
+    );
+  }
 
   return (
     <Link
@@ -211,44 +245,7 @@ function AlertListItem({
       to="/alert"
       style={{ '--delay': `${index * 60}ms` }}
     >
-      <div className="alert-list-item__layout">
-        <div className="alert-list-item__main">
-          <div className="alert-list-item__row">
-            <div className="alert-list-item__chips">
-              <StatusBadge tone={alert.severity}>{formatChipLabel(alert.severity)}</StatusBadge>
-              {alert.status === 'new' ? (
-                <span aria-label="New alert" className="alert-list-item__new-dot" role="img" title="New alert" />
-              ) : null}
-            </div>
-            <span className="alert-list-item__timestamp">{alert.timestampLabel}</span>
-          </div>
-          <h3 className="alert-list-item__title">{alert.title}</h3>
-          <p className="alert-list-item__description">{alert.summary}</p>
-          <div className="alert-list-item__meta">
-            <span className="alert-list-item__field-pill">
-              <span aria-hidden="true" className="alert-list-item__field-pill-icon">
-                <svg viewBox="0 0 24 24">
-                  <path d="M6 14.5h12" />
-                  <path d="M8.5 11.5v3M12 10v4.5M15.5 12v2.5" />
-                  <path d="M6 16.5h12" />
-                </svg>
-              </span>
-              {alert.field.name}
-            </span>
-          </div>
-        </div>
-        <div className="alert-list-item__side">
-          <div className="alert-list-item__icons alert-list-item__icons--large" role="presentation">
-            <AlertIcon label={signalIcon.label} type={signalIcon.type} />
-            <AlertIcon label={`Problem type: ${problemIcon.label}`} type={problemIcon.type} />
-          </div>
-          <span aria-hidden="true" className="alert-list-item__chevron">
-            <svg viewBox="0 0 24 24">
-              <path d="m9 6 6 6-6 6" />
-            </svg>
-          </span>
-        </div>
-      </div>
+      {cardContent}
     </Link>
   );
 }

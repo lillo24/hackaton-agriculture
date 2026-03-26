@@ -25,6 +25,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  gap: 0.7rem;
+  flex-wrap: wrap;
   min-height: 2.6rem;
   transition:
     justify-content var(--toggle-motion-duration) var(--toggle-motion-ease),
@@ -106,6 +108,41 @@
   transform: translateY(-1px) scale(1.01);
 }
 
+.app-shell__intro-button {
+  border: 1px solid rgba(32, 52, 38, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--ink);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.56rem 0.92rem;
+  cursor: pointer;
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(12px);
+  transition:
+    transform 0.2s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.app-shell__intro-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 26px rgba(35, 62, 42, 0.14);
+}
+
+.app-shell__intro-button--skip {
+  background: rgba(32, 52, 38, 0.9);
+  border-color: rgba(32, 52, 38, 0.14);
+  color: #f6fbf3;
+  box-shadow: 0 14px 28px rgba(35, 62, 42, 0.18);
+}
+
+.app-shell__intro-button--replay {
+  background: rgba(255, 255, 255, 0.8);
+}
+
 .app-shell__preview-stage {
   min-height: 0;
   overflow: hidden;
@@ -126,6 +163,41 @@
   display: grid;
   justify-items: center;
   align-items: center;
+}
+
+.app-shell__phone-pitch-stage {
+  width: min(100%, 76rem);
+  min-height: 0;
+  display: grid;
+  align-items: center;
+  justify-items: center;
+}
+
+.app-shell__phone-pitch-stage--intro-active {
+  grid-template-columns:
+    minmax(24rem, 1fr)
+    auto
+    minmax(7rem, 0.72fr);
+  column-gap: clamp(1.1rem, 2.8vw, 2.75rem);
+}
+
+.app-shell__phone-pitch-stage--waiting {
+  cursor: pointer;
+}
+
+.app-shell__phone-pitch-stage--intro-active .intro-terminal {
+  grid-column: 1;
+  justify-self: center;
+}
+
+.app-shell__phone-pitch-stage--intro-active .phone-body {
+  grid-column: 2;
+}
+
+.app-shell__phone-pitch-spacer {
+  grid-column: 3;
+  width: 100%;
+  min-height: 1px;
 }
 
 .app-shell__preview-stage--desktop {
@@ -349,6 +421,28 @@
     --shell-padding-x: clamp(0.85rem, 3vw, 1.4rem);
   }
 
+  .app-shell__preview-stage--phone {
+    width: 100%;
+    align-items: start;
+    overflow: auto;
+    padding-block: 0.35rem 0.6rem;
+  }
+
+  .app-shell__phone-pitch-stage--intro-active {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 1.1rem;
+  }
+
+  .app-shell__phone-pitch-stage--intro-active .intro-terminal,
+  .app-shell__phone-pitch-stage--intro-active .phone-body {
+    grid-column: 1;
+    justify-self: center;
+  }
+
+  .app-shell__phone-pitch-spacer {
+    display: none;
+  }
+
   .desktop-preview-frame {
     height: min(100%, 74dvh);
   }
@@ -367,6 +461,10 @@
 
   .app-shell__mode-toggle-button {
     min-width: 94px;
+  }
+
+  .app-shell__intro-button {
+    padding: 0.52rem 0.86rem;
   }
 
   .app-shell__top-toggle--roadmap {

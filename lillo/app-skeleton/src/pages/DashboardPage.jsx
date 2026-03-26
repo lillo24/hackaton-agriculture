@@ -1,37 +1,53 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import SectionCard from '../components/SectionCard';
 import SoilMoistureCard from '../components/SoilMoistureCard';
 import WaterLevelCard from '../components/WaterLevelCard';
 
-const defaultAssistantPrompt = 'What should I check first this morning?';
+function withPeriod(text) {
+  const clean = (text ?? '').trim();
 
-function formatAlertSummary(totalAlerts, mediumAlerts, highAlerts) {
-  return `${totalAlerts} ${totalAlerts === 1 ? 'alert' : 'alerts'}, ${mediumAlerts} medium and ${highAlerts} high`;
+  if (!clean) {
+    return '';
+  }
+
+  return /[.!?]$/.test(clean) ? clean : `${clean}.`;
 }
 
-function buildMockAssistantReply({
+function buildDailyAssistantReply({
+  farmLabel,
+  totalAlerts,
+  severityCounts,
+  leadAlert,
+  secondaryAlert,
+}) {
+  const alertBreakdown =
+    `${severityCounts.critical} critical, ` +
+    `${severityCounts.high} high, ` +
+    `${severityCounts.medium} medium, and ` +
+    `${severityCounts.low} low`;
+  const leadSummary = leadAlert ? withPeriod(leadAlert.summary) : 'No active anomalies were detected.';
+  const secondarySummary = secondaryAlert
+    ? `Secondary signal: ${withPeriod(secondaryAlert.title)}`
+    : 'No secondary escalation is active.';
+
+  return `Good morning. ${farmLabel} shows ${totalAlerts} ${totalAlerts === 1 ? 'alert' : 'alerts'} today: ${alertBreakdown}. ${leadSummary} ${secondarySummary}`.trim();
+}
+
+function buildFollowupAssistantReply({
   prompt,
   farmLabel,
   totalAlerts,
-  mediumAlerts,
-  highAlerts,
-  primaryAlerts,
+  severityCounts,
 }) {
-  const primaryFocusCopy = primaryAlerts === 1 ? '1 primary alert' : `${primaryAlerts} primary alerts`;
-  const highFocusCopy =
-    highAlerts > 0
-      ? `Start with the ${highAlerts === 1 ? 'high-severity alert' : `${highAlerts} high-severity alerts`}.`
-      : 'No high-severity alerts are active right now.';
-
-  return `I read: "${prompt}". For ${farmLabel}, I see ${formatAlertSummary(totalAlerts, mediumAlerts, highAlerts)}. ${highFocusCopy} Then review ${primaryFocusCopy} before closing the morning round.`;
+  return `Received. ${farmLabel} currently has ${totalAlerts} alerts (${severityCounts.critical} critical, ${severityCounts.medium} medium, ${severityCounts.low} low). ${withPeriod(prompt)}`;
 }
 
 function DashboardPage({ selectedFarm, alerts = [] }) {
-  const [assistantDraft, setAssistantDraft] = useState(defaultAssistantPrompt);
-  const [assistantPrompt, setAssistantPrompt] = useState(defaultAssistantPrompt);
-  const [assistantRunId, setAssistantRunId] = useState(0);
-  const [assistantReply, setAssistantReply] = useState('');
-  const [isAssistantTyping, setIsAssistantTyping] = useState(true);
+  const [chatInput, setChatInput] = useState('');
+  const [chatMessages, setChatMessages] = useState([]);
+  const [typingMessageId, setTypingMessageId] = useState(null);
+  const typingIntervalRef = useRef(null);
+  const nextMessageIdRef = useRef(1);
   const scopedFields = useMemo(() => {
     const uniqueFields = new Map();
 
@@ -57,9 +73,33 @@ function DashboardPage({ selectedFarm, alerts = [] }) {
     [alerts],
   );
   const totalAlerts = alerts.length;
-  const alertVisualSummary = useMemo(
-    () => formatAlertSummary(totalAlerts, severityCounts.medium, severityCounts.high),
-    [severityCounts.high, severityCounts.medium, totalAlerts],
+  const alertCountCopy = useMemo(
+    () => `${totalAlerts} ${totalAlerts === 1 ? 'Alert' : 'Alerts'}`,
+    [totalAlerts],
+  );
+  const severityPills = useMemo(
+    () =>
+      [
+        {
+          key: 'critical',
+          className: 'dashboard-severity-pill--critical',
+          count: severityCounts.critical,
+          label: `${severityCounts.critical} critical${severityCounts.critical === 1 ? '' : 's'}`,
+        },
+        {
+          key: 'medium',
+          className: 'dashboard-severity-pill--medium',
+          count: severityCounts.medium,
+          label: `${severityCounts.medium} medium`,
+        },
+        {
+          key: 'low',
+          className: 'dashboard-severity-pill--low',
+          count: severityCounts.low,
+          label: `${severityCounts.low} low`,
+        },
+      ].filter((pill) => pill.count > 0),
+    [severityCounts.critical, severityCounts.low, severityCounts.medium],
   );
   const waterTrend = useMemo(() => {
     const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -79,107 +119,149 @@ function DashboardPage({ selectedFarm, alerts = [] }) {
     ],
     [scopedFields],
   );
-  const mockAssistantReply = useMemo(
+  const dailyAssistantReply = useMemo(
     () =>
-      buildMockAssistantReply({
-        prompt: assistantPrompt,
+      buildDailyAssistantReply({
         farmLabel: selectedFarm.label,
         totalAlerts,
-        mediumAlerts: severityCounts.medium,
-        highAlerts: severityCounts.high,
-        primaryAlerts,
+        severityCounts,
+        leadAlert: alerts[0],
+        secondaryAlert: alerts[1],
       }),
-    [assistantPrompt, primaryAlerts, selectedFarm.label, severityCounts.high, severityCounts.medium, totalAlerts],
+    [alerts, selectedFarm.label, severityCounts, totalAlerts],
   );
 
-  useEffect(() => {
+  function stopTyping() {
+    if (typingIntervalRef.current) {
+      clearInterval(typingIntervalRef.current);
+      typingIntervalRef.current = null;
+    }
+  }
+
+  function streamAssistantMessage(fullText, typingDelay = 30) {
+    stopTyping();
+
+    const messageId = nextMessageIdRef.current++;
     let characterIndex = 0;
 
-    setAssistantReply('');
-    setIsAssistantTyping(true);
+    setTypingMessageId(messageId);
+    setChatMessages((previousMessages) => [
+      ...previousMessages,
+      { id: messageId, role: 'assistant', text: '' },
+    ]);
 
-    const typingTimer = setInterval(() => {
+    typingIntervalRef.current = setInterval(() => {
       characterIndex += 1;
-      setAssistantReply(mockAssistantReply.slice(0, characterIndex));
+      setChatMessages((previousMessages) =>
+        previousMessages.map((message) =>
+          message.id === messageId ? { ...message, text: fullText.slice(0, characterIndex) } : message,
+        ),
+      );
 
-      if (characterIndex >= mockAssistantReply.length) {
-        clearInterval(typingTimer);
-        setIsAssistantTyping(false);
+      if (characterIndex >= fullText.length) {
+        stopTyping();
+        setTypingMessageId(null);
       }
-    }, 20);
+    }, typingDelay);
+  }
 
-    return () => clearInterval(typingTimer);
-  }, [assistantRunId, mockAssistantReply]);
+  useEffect(() => {
+    setChatMessages([]);
+    streamAssistantMessage(dailyAssistantReply, 34);
 
-  function handleAssistantSubmit(event) {
+    return () => stopTyping();
+  }, [dailyAssistantReply]);
+
+  function handleSendMessage(event) {
     event.preventDefault();
-    const nextPrompt = assistantDraft.trim();
+    const prompt = chatInput.trim();
 
-    if (!nextPrompt) {
+    if (!prompt) {
       return;
     }
 
-    setAssistantPrompt(nextPrompt);
-    setAssistantRunId((runId) => runId + 1);
+    const userMessageId = nextMessageIdRef.current++;
+    const followupReply = buildFollowupAssistantReply({
+      prompt,
+      farmLabel: selectedFarm.label,
+      totalAlerts,
+      severityCounts,
+    });
+
+    setChatMessages((previousMessages) => [
+      ...previousMessages,
+      { id: userMessageId, role: 'user', text: prompt },
+    ]);
+    setChatInput('');
+    streamAssistantMessage(followupReply, 26);
   }
 
   return (
     <div className="page dashboard-page">
       <div className="dashboard-priority-grid">
         <div className="dashboard-priority-grid__assistant">
-          <SectionCard
-            subtitle="Placeholder for a future assistant integration."
-            title="AI assistant seed"
-          >
+          <SectionCard>
             <div className="dashboard-assistant">
-              <div aria-live="polite" className="dashboard-assistant__thread">
-                <article className="dashboard-assistant__message dashboard-assistant__message--user">
-                  <p>{assistantPrompt}</p>
-                </article>
-                <article className="dashboard-assistant__message dashboard-assistant__message--assistant">
-                  <p>
-                    {assistantReply}
-                    {isAssistantTyping ? <span aria-hidden="true" className="dashboard-assistant__cursor">|</span> : null}
-                  </p>
-                </article>
-              </div>
+              <div aria-live="polite" className="dashboard-assistant-chat">
+                <header className="dashboard-assistant-chat__header">
+                  <div className="dashboard-assistant-chat__avatar" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                      <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2Z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="dashboard-assistant-chat__name">Farmer Assistant</p>
+                    <p className="dashboard-assistant-chat__status">Daily recap streaming</p>
+                  </div>
+                </header>
 
-              <form className="dashboard-assistant__composer" onSubmit={handleAssistantSubmit}>
-                <label className="dashboard-assistant__label" htmlFor="dashboard-assistant-input">
-                  Ask something
-                </label>
-                <div className="dashboard-assistant__row">
-                  <input
-                    id="dashboard-assistant-input"
-                    onChange={(event) => setAssistantDraft(event.target.value)}
-                    placeholder="Type a farm question..."
-                    type="text"
-                    value={assistantDraft}
-                  />
-                  <button type="submit">Mock reply</button>
+                <div className="dashboard-assistant-chat__messages">
+                  {chatMessages.map((message) => (
+                    <article
+                      className={`dashboard-assistant-chat__bubble dashboard-assistant-chat__bubble--${message.role}`}
+                      key={message.id}
+                    >
+                      <p>
+                        {message.text}
+                        {typingMessageId === message.id ? <span aria-hidden="true" className="dashboard-assistant__cursor">|</span> : null}
+                      </p>
+                    </article>
+                  ))}
                 </div>
-              </form>
+
+                <form className="dashboard-assistant-chat__composer" onSubmit={handleSendMessage}>
+                  <input
+                    onChange={(event) => setChatInput(event.target.value)}
+                    placeholder="Write a question"
+                    type="text"
+                    value={chatInput}
+                  />
+                  <button
+                    aria-label="Send message"
+                    type="submit"
+                  >
+                    <svg viewBox="0 0 24 24">
+                      <line x1="22" x2="11" y1="2" y2="13" />
+                      <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                    </svg>
+                  </button>
+                </form>
+              </div>
             </div>
           </SectionCard>
         </div>
 
         <div className="dashboard-priority-grid__alerts">
-          <SectionCard
-            subtitle="Primary signal to watch."
-            title="Alerts"
-          >
+          <SectionCard>
             <div className="dashboard-alert-focus">
-              <strong className="dashboard-alert-focus__total">{totalAlerts}</strong>
-              <p className="dashboard-alert-focus__summary">{alertVisualSummary}</p>
+              <strong className="dashboard-alert-focus__total">{alertCountCopy}</strong>
               <div className="dashboard-severity-row">
-                <p className="dashboard-severity-pill dashboard-severity-pill--medium">
-                  <span className="dashboard-severity-dot" />
-                  {severityCounts.medium} medium
-                </p>
-                <p className="dashboard-severity-pill dashboard-severity-pill--high">
-                  <span className="dashboard-severity-dot" />
-                  {severityCounts.high} high
-                </p>
+                {severityPills.map((pill) => (
+                  <p className={`dashboard-severity-pill ${pill.className}`} key={pill.key}>
+                    <span className="dashboard-severity-dot" />
+                    {pill.label}
+                  </p>
+                ))}
               </div>
             </div>
           </SectionCard>

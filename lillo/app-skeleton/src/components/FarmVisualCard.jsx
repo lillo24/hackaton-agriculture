@@ -2,6 +2,12 @@ import SectionCard from './SectionCard';
 
 const markerPalette = ['#3f6e4e', '#77985f', '#5c7f64'];
 const defaultMarkers = ['North canopy', 'Lower terrace', 'Irrigation hub'];
+const tileStatuses = [
+  { id: 'tile-1', type: 'verified', x: 160, y: 54 },
+  { id: 'tile-2', type: 'warning', x: 215, y: 82 },
+  { id: 'tile-3', type: 'verified', x: 160, y: 110 },
+  { id: 'tile-4', type: 'warning', x: 105, y: 82 },
+];
 
 function FarmVisualCard({
   farmName = 'Farm context',
@@ -78,6 +84,26 @@ function FarmVisualCard({
               <polygon fill="url(#farm-tile-2)" points="215,66 270,95 215,124 160,95" />
               <polygon fill="url(#farm-tile-3)" points="160,95 215,124 160,152 105,124" />
               <polygon fill="url(#farm-tile-4)" points="105,66 160,95 105,124 50,95" />
+            </g>
+
+            <g aria-hidden="true">
+              {tileStatuses.map((status, index) => (
+                <g
+                  className={`farm-visual-card__tile-status farm-visual-card__tile-status--${status.type} farm-visual-card__tile-status--float-${index + 1}`}
+                  key={status.id}
+                >
+                  <circle className="farm-visual-card__tile-status-core" cx={status.x} cy={status.y} r="8.8" />
+                  {status.type === 'verified' ? (
+                    <path d={`M ${status.x - 3.8} ${status.y + 0.1} L ${status.x - 1} ${status.y + 3.1} L ${status.x + 4.2} ${status.y - 2.4}`} />
+                  ) : (
+                    <>
+                      <path d={`M ${status.x} ${status.y - 5.5} L ${status.x + 5.2} ${status.y + 4.3} H ${status.x - 5.2} Z`} />
+                      <path d={`M ${status.x} ${status.y - 1.9} V ${status.y + 1.4}`} />
+                      <circle className="farm-visual-card__tile-status-dot" cx={status.x} cy={status.y + 3.4} r="0.75" />
+                    </>
+                  )}
+                </g>
+              ))}
             </g>
           </svg>
 

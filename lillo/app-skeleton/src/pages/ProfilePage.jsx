@@ -71,6 +71,7 @@ function ProfilePage({ selectedFarm, alerts, integrations }) {
         label: 'Satellite',
         type: 'satellite',
         status: readIntegrationStatus(integrations, 'satellite-data'),
+        demoInactive: true,
       },
     ],
     [integrations],
@@ -78,8 +79,8 @@ function ProfilePage({ selectedFarm, alerts, integrations }) {
   const signalBadges = profileSources.map((source) => ({
     id: source.id,
     label: source.label,
-    connected: isSourceConnected(source.status),
-    statusLabel: isSourceConnected(source.status) ? 'Active' : 'Inactive',
+    connected: source.demoInactive ? false : isSourceConnected(source.status),
+    statusLabel: source.demoInactive ? 'Inactive' : isSourceConnected(source.status) ? 'Active' : 'Inactive',
     icon: <SourceIcon type={source.type} />,
   }));
 

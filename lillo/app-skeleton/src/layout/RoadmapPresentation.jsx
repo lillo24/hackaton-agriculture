@@ -2,6 +2,11 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import './RoadmapPresentation.css';
 
 const TOTAL_STEPS = 8;
+const FOCUS_STEP = 5;
+const FEATURED_STEP = 6;
+const IDENTIKIT_DELAY_MS = 360;
+const SECOND_FARMER_DELAY_MS = 2960;
+const SECOND_IDENTIKIT_DELAY_MS = 360;
 
 const CONSORZIO_CENTER = { x: 50, y: 50 };
 const FARMER_ARC_ANGLES = [-72, -46, -20, 20, 46, 72];
@@ -21,6 +26,23 @@ function getElementCenter(element, stageRect) {
   return {
     x: formatPoint(rect.left - stageRect.left + rect.width / 2),
     y: formatPoint(rect.top - stageRect.top + rect.height / 2),
+  };
+}
+
+function getElementBox(element, stageRect) {
+  if (!element) {
+    return null;
+  }
+
+  const rect = element.getBoundingClientRect();
+
+  return {
+    left: formatPoint(rect.left - stageRect.left),
+    top: formatPoint(rect.top - stageRect.top),
+    right: formatPoint(rect.right - stageRect.left),
+    bottom: formatPoint(rect.bottom - stageRect.top),
+    width: formatPoint(rect.width),
+    height: formatPoint(rect.height),
   };
 }
 
@@ -47,9 +69,25 @@ const TOP_FARMER = farmerNodes.reduce((currentTop, node) => {
   return currentTop;
 }, farmerNodes[0]);
 
-const identikitTokens = [
-  { id: 'sensor', label: 'Sensori', icon: 'sensor', offsetX: -78, offsetY: -88, delay: '0.02s' },
-  { id: 'crop', label: 'Coltura', icon: 'crop', offsetX: 88, offsetY: -30, delay: '0.12s' },
+const THIRD_FARMER = farmerNodes[2];
+
+const profileSequences = [
+  {
+    id: 'primary',
+    farmerId: TOP_FARMER.id,
+    tokens: [
+      { id: 'sensor', label: 'Sensori', icon: 'sensor', offsetX: -92, offsetY: -88, delay: '0.02s' },
+      { id: 'crop', label: 'Coltura', icon: 'crop', offsetX: 42, offsetY: -42, delay: '0.12s' },
+    ],
+  },
+  {
+    id: 'secondary',
+    farmerId: THIRD_FARMER.id,
+    tokens: [
+      { id: 'satellite', label: 'Satellite', icon: 'satellite', offsetX: -88, offsetY: -82, delay: '0.02s' },
+      { id: 'soil', label: 'Tipo di suolo', icon: 'soil', offsetX: 46, offsetY: -36, delay: '0.12s' },
+    ],
+  },
 ];
 
 const costSlices = [
@@ -122,6 +160,31 @@ function CropTypeIcon() {
   );
 }
 
+function SatelliteIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <rect height="4.5" rx="1" width="4.5" x="3.5" y="3.5" />
+      <rect height="4.5" rx="1" width="4.5" x="16" y="16" />
+      <path d="m7.4 7.4 9.2 9.2" />
+      <path d="m13.4 5.8 4.8 4.8" />
+      <path d="M5.8 13.4 10.6 18.2" />
+    </svg>
+  );
+}
+
+function SoilTypeIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <path d="M7 9.2h10" />
+      <path d="M5.2 13h13.6" />
+      <path d="M6.4 16.8h11.2" />
+      <path d="M8.1 6.4h7.8" />
+      <path d="m9 13-1.2 3.8" />
+      <path d="m15 13 1.2 3.8" />
+    </svg>
+  );
+}
+
 function ArrowIcon({ direction }) {
   const transform = direction === 'back' ? 'rotate(180 12 12)' : undefined;
 
@@ -137,6 +200,9 @@ function ArrowIcon({ direction }) {
 
 function RoadmapPresentation() {
   const [step, setStep] = useState(0);
+  const [activeProfileIndex, setActiveProfileIndex] = useState(0);
+  const [revealedProfileIds, setRevealedProfileIds] = useState([]);
+  const [profileSequenceComplete, setProfileSequenceComplete] = useState(false);
   const [connectionLayout, setConnectionLayout] = useState({
     width: 0,
     height: 0,
@@ -144,27 +210,78 @@ function RoadmapPresentation() {
     trunkPath: '',
     branchPaths: {},
     farmerCenters: {},
+    featuredPath: '',
   });
   const roadmapRef = useRef(null);
   const stageRef = useRef(null);
   const companyRef = useRef(null);
   const consorzioRef = useRef(null);
+  const featuredFarmerRef = useRef(null);
   const farmerRefs = useRef({});
   const lastStep = TOTAL_STEPS - 1;
   const canGoBack = step > 0;
-  const canAdvance = step < lastStep;
   const showCompany = step >= 1;
   const showConsorzio = step >= 2;
   const showBridge = step >= 3;
   const showFarmers = step >= 4;
-  const showProfileFocus = step >= 5 && step < 7;
-  const showIdentikit = step >= 6 && step < 7;
-  const showCosts = step >= 7;
-  const focusFarmerCenter = connectionLayout.farmerCenters[TOP_FARMER.id];
+  const showProfileFocus = step === FOCUS_STEP;
+  const showIdentikit = showProfileFocus && revealedProfileIds.length > 0;
+  const showFeaturedCase = step === FEATURED_STEP;
+  const showCosts = step >= FEATURED_STEP + 1;
+  const canAdvance = step < lastStep && !(showProfileFocus && !profileSequenceComplete);
+  const activeProfileSequence = profileSequences[activeProfileIndex];
+  const activeProfileFarmerId = activeProfileSequence.farmerId;
+  const revealedProfileSequences = profileSequences.filter((sequence) => revealedProfileIds.includes(sequence.id));
 
   useEffect(() => {
     roadmapRef.current?.focus();
   }, []);
+
+  useEffect(() => {
+    if (!showProfileFocus) {
+      setActiveProfileIndex(0);
+      setRevealedProfileIds([]);
+      setProfileSequenceComplete(false);
+      return undefined;
+    }
+
+    setActiveProfileIndex(0);
+    setRevealedProfileIds([]);
+    setProfileSequenceComplete(false);
+
+    // The two farmer identikits are one automatic sequence inside the same stage,
+    // and each burst stays visible so the comparison reads as cumulative.
+    const firstBurstTimer = window.setTimeout(() => {
+      setRevealedProfileIds((current) => (current.includes(profileSequences[0].id) ? current : [profileSequences[0].id]));
+    }, IDENTIKIT_DELAY_MS);
+
+    const secondFocusTimer = window.setTimeout(() => {
+      setActiveProfileIndex(1);
+    }, SECOND_FARMER_DELAY_MS);
+
+    const secondBurstTimer = window.setTimeout(() => {
+      setRevealedProfileIds((current) => {
+        const nextIds = [...current];
+
+        if (!nextIds.includes(profileSequences[0].id)) {
+          nextIds.push(profileSequences[0].id);
+        }
+
+        if (!nextIds.includes(profileSequences[1].id)) {
+          nextIds.push(profileSequences[1].id);
+        }
+
+        return nextIds;
+      });
+      setProfileSequenceComplete(true);
+    }, SECOND_FARMER_DELAY_MS + SECOND_IDENTIKIT_DELAY_MS);
+
+    return () => {
+      window.clearTimeout(firstBurstTimer);
+      window.clearTimeout(secondFocusTimer);
+      window.clearTimeout(secondBurstTimer);
+    };
+  }, [showProfileFocus]);
 
   useLayoutEffect(() => {
     const stageElement = stageRef.current;
@@ -191,6 +308,7 @@ function RoadmapPresentation() {
         trunkPath: '',
         branchPaths: {},
         farmerCenters: {},
+        featuredPath: '',
       };
 
       const companyCenter = getElementCenter(companyRef.current, stageRect);
@@ -250,6 +368,27 @@ function RoadmapPresentation() {
         }
       }
 
+      if (showFeaturedCase) {
+        const companyBox = getElementBox(companyRef.current, stageRect);
+        const featuredBox = getElementBox(featuredFarmerRef.current, stageRect);
+
+        if (companyBox && featuredBox) {
+          const startX = formatPoint(companyBox.left + companyBox.width * 0.52);
+          const startY = formatPoint(companyBox.bottom + 8);
+          const endX = formatPoint(featuredBox.left + featuredBox.width * 0.26);
+          const endY = formatPoint(featuredBox.top + featuredBox.height * 0.28);
+          const deltaX = endX - startX;
+          const drop = Math.min(Math.max(height * 0.06, 22), 58);
+
+          nextLayout.featuredPath = [
+            `M ${startX} ${startY}`,
+            `C ${formatPoint(startX + deltaX * 0.14)} ${formatPoint(startY + drop * 0.18)},`,
+            `${formatPoint(startX + deltaX * 0.72)} ${formatPoint(endY - drop * 0.26)},`,
+            `${endX} ${endY}`,
+          ].join(' ');
+        }
+      }
+
       setConnectionLayout((current) => {
         const sameLayout =
           current.width === nextLayout.width &&
@@ -257,7 +396,8 @@ function RoadmapPresentation() {
           current.bridgePath === nextLayout.bridgePath &&
           current.trunkPath === nextLayout.trunkPath &&
           JSON.stringify(current.branchPaths) === JSON.stringify(nextLayout.branchPaths) &&
-          JSON.stringify(current.farmerCenters) === JSON.stringify(nextLayout.farmerCenters);
+          JSON.stringify(current.farmerCenters) === JSON.stringify(nextLayout.farmerCenters) &&
+          current.featuredPath === nextLayout.featuredPath;
 
         return sameLayout ? current : nextLayout;
       });
@@ -279,6 +419,10 @@ function RoadmapPresentation() {
       resizeObserver.observe(consorzioRef.current);
     }
 
+    if (featuredFarmerRef.current) {
+      resizeObserver.observe(featuredFarmerRef.current);
+    }
+
     Object.values(farmerRefs.current).forEach((element) => {
       if (element) {
         resizeObserver.observe(element);
@@ -291,7 +435,7 @@ function RoadmapPresentation() {
       cancelAnimationFrame(frameId);
       resizeObserver.disconnect();
     };
-  }, [showBridge, showFarmers, showCompany, showConsorzio, step]);
+  }, [showBridge, showFarmers, showCompany, showConsorzio, showFeaturedCase, step]);
 
   const advanceStep = () => {
     if (canAdvance) {
@@ -328,7 +472,7 @@ function RoadmapPresentation() {
 
   return (
     <article
-      className={`roadmap-presentation roadmap-presentation--step-${step}${showProfileFocus ? ' roadmap-presentation--profile-focus' : ''}${showIdentikit ? ' roadmap-presentation--identikit' : ''}`}
+      className={`roadmap-presentation roadmap-presentation--step-${step}${showProfileFocus ? ' roadmap-presentation--profile-focus' : ''}${showIdentikit ? ' roadmap-presentation--identikit' : ''}${showFeaturedCase ? ' roadmap-presentation--featured-case' : ''}`}
       onClick={handleStageClick}
       onKeyDown={handleKeyDown}
       ref={roadmapRef}
@@ -356,7 +500,7 @@ function RoadmapPresentation() {
             <path className="roadmap-path roadmap-path--trunk" d={connectionLayout.trunkPath} pathLength="1" />
             {farmerNodes.map((node) => (
               <path
-                className={`roadmap-path roadmap-path--branch${node.id === TOP_FARMER.id ? ' roadmap-path--focus-branch' : ''}`}
+                className={`roadmap-path roadmap-path--branch${node.id === activeProfileFarmerId && showProfileFocus ? ' roadmap-path--focus-branch' : ''}`}
                 d={connectionLayout.branchPaths[node.id]}
                 key={`${node.id}-line`}
                 pathLength="1"
@@ -388,7 +532,7 @@ function RoadmapPresentation() {
           {farmerNodes.map((node, index) => (
             <li
               aria-label={`Agricoltore ${index + 1}`}
-              className={`roadmap-node roadmap-node--farmer${node.id === TOP_FARMER.id && showProfileFocus ? ' is-selected' : ''}`}
+              className={`roadmap-node roadmap-node--farmer${node.id === activeProfileFarmerId && showProfileFocus ? ' is-selected' : ''}`}
               key={node.id}
               ref={(element) => {
                 if (element) {
@@ -411,43 +555,72 @@ function RoadmapPresentation() {
           ))}
         </ul>
 
-        {showIdentikit && focusFarmerCenter ? (
-          <div
-            aria-hidden="true"
-            className="roadmap-identikit"
-            style={{
-              '--identikit-origin-x': `${focusFarmerCenter.x}px`,
-              '--identikit-origin-y': `${focusFarmerCenter.y}px`,
-            }}
-          >
-            {identikitTokens.map((token) => (
-              <article
-                className={`roadmap-identikit__token roadmap-identikit__token--${token.id}`}
-                key={token.id}
-                style={{
-                  '--burst-x': `${token.offsetX}px`,
-                  '--burst-y': `${token.offsetY}px`,
-                  '--burst-delay': token.delay,
-                }}
-              >
-                <span className="roadmap-identikit__icon">
-                  {token.icon === 'sensor' ? <SensorSetupIcon /> : <CropTypeIcon />}
-                </span>
-                <span className="roadmap-identikit__copy">{token.label}</span>
-              </article>
-            ))}
+        {showIdentikit
+          ? revealedProfileSequences.map((sequence) => {
+              const farmerCenter = connectionLayout.farmerCenters[sequence.farmerId];
 
-            <span
-              className="roadmap-identikit__caption"
-              style={{
-                '--burst-x': '62px',
-                '--burst-y': '54px',
-                '--burst-delay': '0.22s',
-              }}
-            >
-              Alert mirati
-            </span>
-          </div>
+              if (!farmerCenter) {
+                return null;
+              }
+
+              return (
+                <div
+                  aria-hidden="true"
+                  className={`roadmap-identikit roadmap-identikit--${sequence.id}`}
+                  key={sequence.id}
+                  style={{
+                    '--identikit-origin-x': `${farmerCenter.x}px`,
+                    '--identikit-origin-y': `${farmerCenter.y}px`,
+                  }}
+                >
+                  {sequence.tokens.map((token) => (
+                    <article
+                      className={`roadmap-identikit__token roadmap-identikit__token--${token.id}`}
+                      key={token.id}
+                      style={{
+                        '--burst-x': `${token.offsetX}px`,
+                        '--burst-y': `${token.offsetY}px`,
+                        '--burst-delay': token.delay,
+                      }}
+                    >
+                      <span className="roadmap-identikit__icon">
+                        {token.icon === 'sensor' ? <SensorSetupIcon /> : null}
+                        {token.icon === 'crop' ? <CropTypeIcon /> : null}
+                        {token.icon === 'satellite' ? <SatelliteIcon /> : null}
+                        {token.icon === 'soil' ? <SoilTypeIcon /> : null}
+                      </span>
+                      <span className="roadmap-identikit__copy">{token.label}</span>
+                    </article>
+                  ))}
+                </div>
+              );
+            })
+          : null}
+
+        {showFeaturedCase && connectionLayout.featuredPath ? (
+          <svg
+            aria-hidden="true"
+            className="roadmap-connection-layer roadmap-connection-layer--feature"
+            preserveAspectRatio="none"
+            viewBox={`0 0 ${connectionLayout.width} ${connectionLayout.height}`}
+          >
+            <path className="roadmap-path roadmap-path--feature" d={connectionLayout.featuredPath} pathLength="1" />
+          </svg>
+        ) : null}
+
+        {showFeaturedCase ? (
+          <article aria-label="Azienda esempio" className="roadmap-featured-farmer" ref={featuredFarmerRef}>
+            <span className="roadmap-featured-farmer__eyebrow">Azienda esempio</span>
+            <div className="roadmap-featured-farmer__body">
+              <span className="roadmap-featured-farmer__icon">
+                <FarmerIcon />
+              </span>
+              <div className="roadmap-featured-farmer__copy">
+                <strong>Profilo agricolo mirato</strong>
+                <span>Sensori, satellite, suolo</span>
+              </div>
+            </div>
+          </article>
         ) : null}
 
         {showCosts ? (

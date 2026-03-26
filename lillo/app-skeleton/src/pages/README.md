@@ -4,7 +4,7 @@ Status: `DRAFT` because the dashboard/profile/alert route refactor is complete, 
 
 Files
 - `README.md` (`STABLE`) - folder map for route-level screens and behavior notes.
-- `DashboardPage.jsx` (`DRAFT`) - home route with split dashboard priority UI: desktop keeps AI + alert detail row, while phone simplifies to alerts-first with reduced metadata.
+- `DashboardPage.jsx` (`DRAFT`) - home route with split dashboard priority UI: desktop keeps alert chips plus a white-theme simulated chatbot recap, while phone keeps alerts-first with compact metadata.
 - `ProfilePage.jsx` (`DRAFT`) - centered static farm scene with floating top-right signal icons and minimal read-only profile context.
 - `AlertsPage.jsx` (`DRAFT`) - ranked alerts feed with URL-backed filters, a flatter filter strip, and click-to-select behavior for the dedicated alert detail route.
 - `AlertDetailPage.jsx` (`DRAFT`) - dedicated `/alert` detail destination that renders the app-selected alert or a quiet empty state when nothing is selected.
@@ -17,15 +17,20 @@ Why these live together
 
 Non-obvious behavior
 - `AlertsPage` ranking uses weighted urgency: severity, farm relevance, status urgency, then recency as tie influence.
-- Alert filters are URL-backed (`severity`, `source`, `relevance`) so list context survives navigation.
-- The filter strip intentionally avoids top labels and per-view totals, exposing only the minimal filter controls plus `Clear filters` when needed.
+- Alert filters are URL-backed (`severity`, `source`, `history`) so list context survives navigation.
+- The filter strip intentionally avoids top labels and per-view totals, exposing minimal controls (including a `history` toggle) plus `Clear filters` when needed.
 - The alert filter strip is sticky and full-bleed at the top of the scrollable page area, so controls remain visible and visually detached from card-width constraints.
+- The `history` toggle appends a local fake archived alert card used for pitch/demo context; it is intentionally muted and non-interactive.
 - `AlertsPage` keeps top-priority and non-critical alerts directly in-feed (without titled wrappers) and sets app-level selected alert state when a user opens any alert card.
 - `AlertDetailPage` reads only that selected-alert state and intentionally shows a quiet empty placeholder if nothing is selected yet.
 - `AlertDetailPage` keeps the top metadata compact (title, urgency, triggered time, field context), renders `new` as a blue `New notification` indicator, and then walks through an animated farm-themed roadmap (`Problems -> Integrated -> Action to do`).
 - `DashboardPage` derives water and soil summary card values from the active alert set (`primary` relevance count and active field list) to stay lightweight without introducing a new data layer.
-- `DashboardPage` intentionally removes old context copy/metadata blocks (`farm profile`, `plots tracked`, long intro description) so the top area shows only AI assistant + alert count.
-- `DashboardPage` keeps a visual alert sentence (`X alerts, Y medium and Z high`) derived from active severities and replays a deterministic mock assistant answer with a typewriter effect each time the local prompt is submitted.
-- `DashboardPage` is now mode-aware through CSS shell classes: in `phone` preview, alerts render first and hide extra alert copy (`Primary signal to watch`, severity sentence/chips) for compact usability.
+- `DashboardPage` intentionally removes old context copy/metadata blocks (`farm profile`, `plots tracked`, long intro description) and assistant placeholder headings so the top area focuses on alerts and chat recap.
+- `DashboardPage` now renders severity chips as compact labels (`critical`, `medium`, `low`) and keeps them visible in both desktop and phone modes.
+- `DashboardPage` starts a deterministic assistant recap stream automatically on page enter (without a user seed message), then keeps an input field available for follow-up chat prompts.
+- `DashboardPage` assistant avatar now uses the same robot icon language as the dedicated chatbot UI repo to keep visual consistency.
+- `DashboardPage` is mode-aware through CSS shell classes: in `phone` preview, alerts render first and hide extra alert subtitle copy while preserving count/chip visibility.
+- `DashboardPage` stacks water/moisture summary cards on separate rows in `phone` preview and hides those cards' subtitle descriptions to reduce clutter.
+- `DashboardPage` keeps rounded cards in desktop preview, while `phone` preview uses full-bleed card blocks (edge-to-edge width) with square corners.
 - `ProfilePage` keeps connected-source state intentionally binary with icon-symbol emphasis (`green` active, `red` broken) in a floating horizontal strip on the farm scene.
 - `ProfilePage` intentionally collapses to a single centered stage so the farm visual remains the focal point and no right-side identity column consumes space.

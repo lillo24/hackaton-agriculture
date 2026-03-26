@@ -3,7 +3,7 @@ import { useLocation, useSearchParams } from 'react-router-dom';
 import AlertListItem from '../components/AlertListItem';
 import SectionCard from '../components/SectionCard';
 import StatusBadge from '../components/StatusBadge';
-import { alertSeverityScale, farmRelevanceScale } from '../data/mockData';
+import { alertSeverityScale } from '../data/mockData';
 
 const severityPriority = { critical: 4, high: 3, medium: 2, low: 1 };
 const statusPriority = { new: 5, active: 4, monitoring: 3, acknowledged: 2, resolved: 1 };
@@ -115,14 +115,30 @@ function AlertsPage({
       .map(([id, label]) => ({ id, label }))
       .sort((left, right) => left.label.localeCompare(right.label));
   }, [rankedAlerts]);
+  const historyAlerts = useMemo(
+    () => [
+      {
+        id: 'history-irrigation-drift-archived',
+        severity: 'low',
+        status: 'resolved',
+        title: 'Irrigation drift stabilized after valve calibration',
+        summary: 'Archived signal from the previous cycle. Moisture variance recovered inside the expected range.',
+        sourceIds: ['soil-probe-grid', 'weather-model'],
+        sourceNames: ['Soil Probe Grid', 'Weather Forecast Fusion'],
+        timestampLabel: '3 days ago',
+        isHistorical: true,
+      },
+    ],
+    [],
+  );
 
   const severityFilter = readFilter(searchParams, 'severity', alertSeverityScale);
   const sourceFilter = readFilter(searchParams, 'source', sourceOptions.map((source) => source.id));
-  const relevanceFilter = readFilter(searchParams, 'relevance', farmRelevanceScale);
-  const hasActiveFilters = [severityFilter, sourceFilter, relevanceFilter].some((value) => value !== 'all');
+  const historyEnabled = searchParams.get('history') === '1';
+  const hasActiveFilters = [severityFilter, sourceFilter].some((value) => value !== 'all') || historyEnabled;
   const filteredAlerts = useMemo(
-    () =>
-      rankedAlerts.filter((alert) => {
+    () => {
+      const baseAlerts = rankedAlerts.filter((alert) => {
         if (severityFilter !== 'all' && alert.severity !== severityFilter) {
           return false;
         }
@@ -131,13 +147,28 @@ function AlertsPage({
           return false;
         }
 
-        if (relevanceFilter !== 'all' && alert.farmRelevance !== relevanceFilter) {
+        return true;
+      });
+
+      if (!historyEnabled) {
+        return baseAlerts;
+      }
+
+      const visibleHistoryAlerts = historyAlerts.filter((alert) => {
+        if (severityFilter !== 'all' && alert.severity !== severityFilter) {
+          return false;
+        }
+
+        if (sourceFilter !== 'all' && !alert.sourceIds.includes(sourceFilter)) {
           return false;
         }
 
         return true;
-      }),
-    [rankedAlerts, relevanceFilter, severityFilter, sourceFilter],
+      });
+
+      return [...baseAlerts, ...visibleHistoryAlerts];
+    },
+    [historyAlerts, historyEnabled, rankedAlerts, severityFilter, sourceFilter],
   );
   const groupedAlerts = useMemo(() => {
     const nextGroups = {
@@ -159,6 +190,7 @@ function AlertsPage({
   function updateFilter(filterName, nextValue) {
     const nextSearch = new URLSearchParams(searchParams);
     nextSearch.delete('status');
+    nextSearch.delete('relevance');
 
     if (nextValue === 'all') {
       nextSearch.delete(filterName);
@@ -171,6 +203,20 @@ function AlertsPage({
 
   function clearFilters() {
     setSearchParams({}, { replace: true });
+  }
+
+  function toggleHistory() {
+    const nextSearch = new URLSearchParams(searchParams);
+    nextSearch.delete('status');
+    nextSearch.delete('relevance');
+
+    if (historyEnabled) {
+      nextSearch.delete('history');
+    } else {
+      nextSearch.set('history', '1');
+    }
+
+    setSearchParams(nextSearch, { replace: true });
   }
 
   function handleOpenAlert(alertId) {
@@ -204,6 +250,7 @@ function AlertsPage({
             <AlertListItem
               alert={alert}
               index={startIndex + index}
+              isHistorical={Boolean(alert.isHistorical)}
               isFocused={focusedAlertId === alert.id}
               key={alert.id}
               returnTo={returnTo}
@@ -253,22 +300,17 @@ function AlertsPage({
             </select>
           </label>
 
-          <label className="filter-field" htmlFor="relevance-filter">
-            Farm relevance
-            <select
-              className="filter-control"
-              id="relevance-filter"
-              onChange={(event) => updateFilter('relevance', event.target.value)}
-              value={relevanceFilter}
+          <div className="filter-field filter-field--toggle">
+            <span>History</span>
+            <button
+              aria-pressed={historyEnabled}
+              className={`filter-toggle${historyEnabled ? ' is-active' : ''}`}
+              onClick={toggleHistory}
+              type="button"
             >
-              <option value="all">All</option>
-              {farmRelevanceScale.map((relevance) => (
-                <option key={relevance} value={relevance}>
-                  {formatOptionLabel(relevance)}
-                </option>
-              ))}
-            </select>
-          </label>
+              History
+            </button>
+          </div>
         </div>
 
         {hasActiveFilters ? (

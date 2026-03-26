@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import IntroTerminal from '../components/IntroTerminal';
 import PhoneFrame from '../components/PhoneFrame';
 import RoadmapPresentation from './RoadmapPresentation';
 import './AppShell.css';
@@ -83,10 +84,91 @@ function PreviewApp({ previewMode }) {
   );
 }
 
-function AppShell() {
+function AppShell({ alerts = [] }) {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [previewMode, setPreviewMode] = useState('phone');
+  const [startupSequencePending, setStartupSequencePending] = useState(
+    location.pathname === '/' || location.pathname === '/dashboard',
+  );
+  const [startupSequenceKey, setStartupSequenceKey] = useState(0);
+  const [terminalPhase, setTerminalPhase] = useState('hidden');
   const previewApp = <PreviewApp previewMode={previewMode} />;
   const isRoadmap = previewMode === 'roadmap';
+  const isPhonePreview = previewMode === 'phone';
+  const isDashboardRoute = location.pathname === '/dashboard';
+  const startupAlert = alerts[0] ?? null;
+  const shouldQueueTerminalIntro = isPhonePreview && isDashboardRoute && startupSequencePending;
+  const isTerminalBubbleActive = isPhonePreview && isDashboardRoute && terminalPhase === 'bubble';
+  const shouldHoldIntroStage = shouldQueueTerminalIntro || isTerminalBubbleActive;
+  const isTerminalIntroActive = isPhonePreview && isDashboardRoute && terminalPhase !== 'hidden';
+  const canStartTerminalSequence = shouldQueueTerminalIntro && terminalPhase === 'visible';
+
+  useEffect(() => {
+    if (shouldQueueTerminalIntro) {
+      setTerminalPhase('visible');
+    }
+  }, [shouldQueueTerminalIntro, startupSequenceKey]);
+
+  useEffect(() => {
+    if (!canStartTerminalSequence) {
+      return undefined;
+    }
+
+    function handleKeyDown(event) {
+      if (event.code !== 'Space' && event.key !== ' ') {
+        return;
+      }
+
+      const target = event.target;
+      const interactiveTarget =
+        target instanceof Element ? target.closest('button, a, input, textarea, select, [role="button"]') : null;
+      const isEditableTarget = target instanceof HTMLElement && target.isContentEditable;
+
+      if (interactiveTarget || isEditableTarget) {
+        return;
+      }
+
+      event.preventDefault();
+      setTerminalPhase((currentPhase) => (currentPhase === 'visible' ? 'running' : currentPhase));
+    }
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [canStartTerminalSequence]);
+
+  function handleReplayIntro() {
+    setPreviewMode('phone');
+    setStartupSequencePending(true);
+    setTerminalPhase('hidden');
+    setStartupSequenceKey((currentKey) => currentKey + 1);
+
+    if (location.pathname !== '/dashboard') {
+      navigate('/dashboard');
+    }
+  }
+
+  function handleSkipIntro() {
+    setStartupSequencePending(false);
+    setTerminalPhase('hidden');
+  }
+
+  function handleStartTerminalSequence() {
+    setTerminalPhase((currentPhase) => (currentPhase === 'visible' ? 'running' : currentPhase));
+  }
+
+  function handleTerminalPhaseComplete(completedPhase) {
+    if (completedPhase === 'running') {
+      setTerminalPhase((currentPhase) => (currentPhase === 'running' ? 'collapsing' : currentPhase));
+      return;
+    }
+
+    if (completedPhase === 'collapsing') {
+      setTerminalPhase((currentPhase) => (currentPhase === 'collapsing' ? 'bubble' : currentPhase));
+      setStartupSequencePending(false);
+    }
+  }
 
   return (
     <div className={`app-shell app-shell--${previewMode}`}>
@@ -113,13 +195,44 @@ function AppShell() {
             );
           })}
         </div>
+
+        {isPhonePreview ? (
+          <button
+            className={`app-shell__intro-button${
+              shouldHoldIntroStage ? ' app-shell__intro-button--skip' : ' app-shell__intro-button--replay'
+            }`}
+            onClick={shouldHoldIntroStage ? handleSkipIntro : handleReplayIntro}
+            type="button"
+          >
+            {shouldHoldIntroStage ? 'Skip intro' : 'Replay intro'}
+          </button>
+        ) : null}
       </div>
 
       <section className={`app-shell__preview-stage app-shell__preview-stage--${previewMode}`}>
         {isRoadmap ? (
           <RoadmapPresentation />
         ) : previewMode === 'phone' ? (
-          <PhoneFrame>{previewApp}</PhoneFrame>
+          <div
+            className={`app-shell__phone-pitch-stage${
+              isTerminalIntroActive ? ' app-shell__phone-pitch-stage--intro-active' : ''
+            }${canStartTerminalSequence ? ' app-shell__phone-pitch-stage--waiting' : ''}`}
+            onClick={canStartTerminalSequence ? handleStartTerminalSequence : undefined}
+          >
+            <IntroTerminal
+              onPhaseComplete={handleTerminalPhaseComplete}
+              phase={isTerminalIntroActive ? terminalPhase : 'hidden'}
+            />
+            <PhoneFrame
+              enableStartupSequence={shouldHoldIntroStage}
+              startupAlert={startupAlert}
+              startupSequenceKey={startupSequenceKey}
+              startupShouldBegin={false}
+            >
+              {previewApp}
+            </PhoneFrame>
+            {isTerminalIntroActive ? <div aria-hidden="true" className="app-shell__phone-pitch-spacer" /> : null}
+          </div>
         ) : (
           <div className="desktop-preview-frame">{previewApp}</div>
         )}
